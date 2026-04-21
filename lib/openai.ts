@@ -9,8 +9,6 @@ export interface RiskSummaryInput {
 }
 
 let client: OpenAI | null = null;
-const RISK_DISCLAIMER =
-  "Crypto is risky. Always do your own research; this is not financial advice.";
 
 function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY) {
@@ -63,5 +61,5 @@ export async function generateRiskSummary({
     throw new Error("OpenAI returned an empty risk summary.");
   }
 
-  return `${summary} ${RISK_DISCLAIMER}`;
+  return summary;
 }

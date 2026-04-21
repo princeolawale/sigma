@@ -11,6 +11,9 @@ interface ResultCardProps {
   result: TokenAnalysisResult;
 }
 
+const RISK_DISCLAIMER =
+  "Crypto is risky. Always do your own research; this is not financial advice.";
+
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -123,6 +126,10 @@ export default function ResultCard({ result }: ResultCardProps) {
           AI Risk Summary
         </p>
         <p className="mt-3 leading-7 text-slate-100">{result.summary}</p>
+        <p className="mt-4 rounded-2xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm font-semibold leading-6 text-red-200">
+          <span className="text-red-300">Disclaimer:</span>{" "}
+          {RISK_DISCLAIMER}
+        </p>
       </div>
     </section>
   );
