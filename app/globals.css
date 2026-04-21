@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: #071014;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(84, 240, 178, 0.14), transparent 34rem),
+    radial-gradient(circle at top right, rgba(91, 200, 255, 0.12), transparent 36rem),
+    #071014;
+  color: #edf8f5;
+}
+
+::selection {
+  background: rgba(84, 240, 178, 0.35);
+  color: white;
+}
