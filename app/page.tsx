@@ -68,7 +68,7 @@ const socials = [
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col overflow-hidden">
-      <nav className="border-b border-white/10 bg-ink/80 backdrop-blur-xl">
+      <nav className="sticky top-0 z-30 border-b border-white/10 bg-ink/80 backdrop-blur-xl sm:static">
         <div className="relative mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="font-serif text-4xl font-bold italic tracking-normal text-white drop-shadow-[0_0_18px_rgba(84,240,178,0.28)] sm:text-5xl">
