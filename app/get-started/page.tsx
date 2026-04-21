@@ -17,7 +17,7 @@ export default function GetStartedPage() {
           Launch app
         </p>
         <h1 className="max-w-3xl text-5xl font-semibold leading-tight tracking-normal text-white drop-shadow-[0_0_18px_rgba(84,240,178,0.14)] sm:text-7xl">
-          Paste a CA and analyze token risk
+          Analyze token risk
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
           Drop in a contract address to review liquidity, trading activity, risk

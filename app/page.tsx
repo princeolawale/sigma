@@ -65,7 +65,7 @@ export default function Home() {
         </p>
         <Link
           href="/get-started"
-          className="mt-9 inline-flex min-h-14 items-center justify-center rounded-2xl bg-acid px-7 font-semibold text-ink transition hover:bg-[#7af7c5] focus:outline-none focus:ring-4 focus:ring-acid/20"
+          className="mt-9 inline-flex min-h-14 items-center justify-center rounded-2xl bg-acid px-7 font-extrabold text-ink transition hover:bg-[#7af7c5] focus:outline-none focus:ring-4 focus:ring-acid/20"
         >
           Launch App
         </Link>
