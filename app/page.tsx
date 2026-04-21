@@ -31,15 +31,6 @@ const reasons = [
   }
 ];
 
-const features = [
-  "Contract-address scanning",
-  "Liquidity risk context",
-  "24h market movement",
-  "AI-generated summaries",
-  "Simple risk scoring",
-  "Fast first-pass analysis"
-];
-
 const steps = [
   {
     title: "Paste a token address",
@@ -52,6 +43,25 @@ const steps = [
   {
     title: "Use the summary",
     text: "Get a concise AI explanation to support your own research before trading."
+  }
+];
+
+const socials = [
+  {
+    name: "X",
+    href: "https://x.com/usesigma?s=21",
+    label: "Open Sigma on X",
+    icon: (
+      <path d="M13.74 10.38 21.13 2h-1.75l-6.42 7.28L7.83 2H1.92l7.75 11.02L1.92 21.8h1.75l6.78-7.69 5.42 7.69h5.91l-8.04-11.42Zm-2.4 2.72-.79-1.1L4.31 3.29h2.68l5.05 7.04.78 1.1 6.55 9.14h-2.68l-5.35-7.47Z" />
+    )
+  },
+  {
+    name: "Telegram",
+    href: "https://t.me/sigmaofficialchat",
+    label: "Open Sigma Telegram chat",
+    icon: (
+      <path d="M21.58 3.32a1.5 1.5 0 0 0-1.55-.22L3.24 9.58c-.72.28-1.18.78-1.22 1.34-.04.56.35 1.07 1.04 1.38l4.3 1.88 1.72 5.31c.22.67.62 1.07 1.12 1.11.43.03.86-.2 1.24-.66l2.25-2.75 4.4 3.26c.44.32.88.43 1.27.32.45-.13.78-.52.94-1.1L22.1 4.82c.18-.7-.01-1.22-.52-1.5ZM8.16 13.1l8.4-5.31-6.52 7.03-.25 2.87-1.05-3.24a1.7 1.7 0 0 0-.58-1.35Zm10.45 5.85-4.5-3.34a1 1 0 0 0-1.37.17l-1.18 1.44.14-1.57 7.07-7.62-1.23 10.72.07.05-.01.04Z" />
+    )
   }
 ];
 
@@ -105,6 +115,29 @@ export default function Home() {
               >
                 How It Works
               </a>
+              <div className="my-2 h-px bg-white/10" />
+              <div className="grid grid-cols-2 gap-2">
+                {socials.map((social) => (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm font-medium text-slate-200 transition hover:border-acid/40 hover:text-acid"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      fill="currentColor"
+                    >
+                      {social.icon}
+                    </svg>
+                    {social.name}
+                  </a>
+                ))}
+              </div>
             </div>
           </details>
         </div>
@@ -128,27 +161,6 @@ export default function Home() {
         </div>
 
         <TokenAnalyzer />
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-5 pb-14 sm:px-8 sm:pb-16">
-        <div className="rounded-3xl border border-white/10 bg-panel/60 px-5 py-10 text-center shadow-glow sm:px-8">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan">
-            Features
-          </p>
-          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-            The essentials in one clean scan
-          </h2>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature) => (
-              <div
-                key={feature}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm font-medium text-slate-200"
-              >
-                {feature}
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section id="why-choose-us" className="border-y border-white/10 bg-white/[0.02]">
@@ -224,6 +236,54 @@ export default function Home() {
               </p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 pb-14 sm:px-8 sm:pb-16">
+        <div className="rounded-3xl border border-white/10 bg-panel/60 px-5 py-10 text-center shadow-glow sm:px-8">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan">
+            Socials
+          </p>
+          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+            Join the Sigma community
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400">
+            Follow product updates on X or jump into the Telegram chat with the
+            community.
+          </p>
+          <div className="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
+            {socials.map((social) => (
+              <a
+                key={social.name}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.label}
+                className="group flex items-center justify-center gap-4 rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-6 text-left transition hover:-translate-y-1 hover:border-acid/40 hover:bg-white/[0.05]"
+              >
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-acid/30 bg-acid/10 text-acid transition group-hover:shadow-[0_0_28px_rgba(84,240,178,0.24)]">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6"
+                    fill="currentColor"
+                  >
+                    {social.icon}
+                  </svg>
+                </span>
+                <span>
+                  <span className="block text-lg font-semibold text-white">
+                    {social.name}
+                  </span>
+                  <span className="mt-1 block text-sm text-slate-400">
+                    {social.name === "X"
+                      ? "Follow @usesigma"
+                      : "Open the official chat"}
+                  </span>
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
