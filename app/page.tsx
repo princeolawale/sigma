@@ -1,5 +1,23 @@
-import Image from "next/image";
 import TokenAnalyzer from "@/components/TokenAnalyzer";
+
+const reasons = [
+  {
+    title: "Instant Risk Signals",
+    text: "See liquidity, volume, and price movement translated into a clear risk readout."
+  },
+  {
+    title: "AI-Powered Context",
+    text: "Get plain-English summaries that explain what the raw token data may imply."
+  },
+  {
+    title: "Built For Speed",
+    text: "Paste a contract address and get a focused scan without digging through dashboards."
+  },
+  {
+    title: "Investor-Friendly",
+    text: "Designed for everyday traders who want sharper context before making a move."
+  }
+];
 
 export default function Home() {
   return (
@@ -7,14 +25,9 @@ export default function Home() {
       <nav className="border-b border-white/10 bg-ink/80 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:px-8">
           <div className="flex items-center gap-3">
-            <Image
-              src="/logo.png"
-              alt="SIGMA"
-              width={200}
-              height={200}
-              priority
-              className="w-16 h-16 object-contain"
-            />
+            <span className="text-3xl font-semibold uppercase tracking-[0.18em] text-white sm:text-4xl">
+              Sigma
+            </span>
           </div>
           <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-300 sm:flex">
             <span className="h-2 w-2 rounded-full bg-acid shadow-[0_0_18px_rgba(84,240,178,0.9)]" />
@@ -38,6 +51,44 @@ export default function Home() {
         </div>
 
         <TokenAnalyzer />
+      </section>
+
+      <section className="border-y border-white/10 bg-white/[0.02]">
+        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
+          <div className="mb-9 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.18em] text-acid">
+                Why Choose Us
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+                Cleaner signal before the trade
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-slate-400 sm:text-right">
+              Sigma cuts through noisy token data with fast, readable analysis
+              built for confident first-pass decisions.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {reasons.map((reason, index) => (
+              <article
+                key={reason.title}
+                className="group min-h-48 border border-white/10 bg-ink/60 p-5 transition hover:-translate-y-1 hover:border-acid/40 hover:bg-white/[0.04]"
+              >
+                <div className="mb-7 flex h-10 w-10 items-center justify-center border border-acid/30 bg-acid/10 text-sm font-semibold text-acid">
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <h3 className="text-lg font-semibold text-white">
+                  {reason.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  {reason.text}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
       </section>
 
       <footer className="mt-auto border-t border-white/10 bg-ink/70">
