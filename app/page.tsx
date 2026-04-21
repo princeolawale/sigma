@@ -262,54 +262,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-5 pb-14 sm:px-8 sm:pb-16">
-        <div className="rounded-3xl border border-white/10 bg-panel/60 px-5 py-10 text-center shadow-glow sm:px-8">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan">
-            Socials
-          </p>
-          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-semibold tracking-normal text-white sm:text-4xl">
-            Join the Sigma community
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400">
-            Follow product updates on X or jump into the Telegram chat with the
-            community.
-          </p>
-          <div className="mx-auto mt-8 grid max-w-2xl gap-4 sm:grid-cols-2">
-            {socials.map((social) => (
-              <a
-                key={social.name}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={social.label}
-                className="group flex items-center justify-center gap-4 rounded-3xl border border-white/10 bg-white/[0.03] px-5 py-6 text-left transition hover:-translate-y-1 hover:border-acid/40 hover:bg-white/[0.05]"
-              >
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-acid/30 bg-acid/10 text-acid transition group-hover:shadow-[0_0_28px_rgba(84,240,178,0.24)]">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="h-6 w-6"
-                    fill="currentColor"
-                  >
-                    {social.icon}
-                  </svg>
-                </span>
-                <span>
-                  <span className="block text-lg font-semibold text-white">
-                    {social.name}
-                  </span>
-                  <span className="mt-1 block text-sm text-slate-400">
-                    {social.name === "X"
-                      ? "Follow @usesigma"
-                      : "Open the official chat"}
-                  </span>
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <footer className="mt-auto border-t border-white/10 bg-ink/70">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-5 py-8 text-center sm:px-8">
           <p className="text-sm text-slate-400">2026 Sigma. All rights reserved.</p>
