@@ -23,5 +23,5 @@ export function calculateRiskScore({
     score -= 15;
   }
 
-  return Math.min(100, Math.max(0, score));
+  return Math.min(99, Math.max(0, score));
 }

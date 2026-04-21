@@ -16,7 +16,7 @@ export default function GetStartedPage() {
         <p className="mb-4 inline-flex rounded-full border border-acid/30 bg-acid/10 px-4 py-2 text-sm font-medium text-acid">
           Launch app
         </p>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-normal text-white sm:text-6xl">
+        <h1 className="max-w-3xl font-serif text-5xl font-bold italic tracking-normal text-white drop-shadow-[0_0_22px_rgba(84,240,178,0.18)] sm:text-7xl">
           Paste a CA and analyze token risk
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">

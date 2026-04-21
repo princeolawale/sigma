@@ -56,7 +56,7 @@ export default function Home() {
         <p className="mb-4 inline-flex rounded-full border border-acid/30 bg-acid/10 px-4 py-2 text-sm font-medium text-acid">
           Crypto risk analysis for everyday investors
         </p>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-normal text-white sm:text-6xl">
+        <h1 className="max-w-3xl font-serif text-5xl font-bold italic tracking-normal text-white drop-shadow-[0_0_22px_rgba(84,240,178,0.18)] sm:text-7xl">
           AI-Powered Token Risk Analysis
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
@@ -78,7 +78,7 @@ export default function Home() {
               <p className="text-sm font-medium uppercase tracking-[0.18em] text-acid">
                 Why Choose Us
               </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+              <h2 className="mt-3 font-serif text-4xl font-bold italic tracking-normal text-white drop-shadow-[0_0_18px_rgba(84,240,178,0.16)] sm:text-5xl">
                 Cleaner signal before the trade
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400">
@@ -125,7 +125,7 @@ export default function Home() {
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-acid">
             How It Works
           </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-normal text-white sm:text-4xl">
+          <h2 className="mt-3 font-serif text-4xl font-bold italic tracking-normal text-white drop-shadow-[0_0_18px_rgba(91,200,255,0.16)] sm:text-5xl">
             From address to insight in seconds
           </h2>
         </div>
