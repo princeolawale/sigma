@@ -75,9 +75,32 @@ export default function Home() {
               Sigma
             </span>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-300 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-acid shadow-[0_0_18px_rgba(84,240,178,0.9)]" />
-            Live token intelligence
+          <div className="hidden items-center gap-3 sm:flex">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-300">
+              <span className="h-2 w-2 rounded-full bg-acid shadow-[0_0_18px_rgba(84,240,178,0.9)]" />
+              Live token intelligence
+            </div>
+            <div className="flex items-center gap-2">
+              {socials.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
+                  className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.03] text-slate-300 transition hover:border-acid/50 hover:text-acid focus:outline-none focus:ring-2 focus:ring-acid/60"
+                >
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    fill="currentColor"
+                  >
+                    {social.icon}
+                  </svg>
+                </a>
+              ))}
+            </div>
           </div>
           <details className="group sm:hidden">
             <summary
