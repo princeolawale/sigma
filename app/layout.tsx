@@ -5,7 +5,7 @@ const siteUrl = "https://www.sigmadapp.xyz";
 const title = "SIGMA | AI-Powered Token Risk Analysis";
 const description =
   "AI-powered token risk analysis for traders who want better market insight.";
-const socialImage = "/social-hero-preview.jpeg";
+const socialImage = "/social-hero-preview-v4.jpeg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
