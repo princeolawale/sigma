@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "SIGMA token risk analysis preview";
+export const alt = "SIGMA landing page preview";
 export const size = {
   width: 1200,
   height: 630
@@ -12,219 +12,147 @@ export default function OpenGraphImage() {
     (
       <div
         style={{
-          height: "100%",
           width: "100%",
+          height: "100%",
           display: "flex",
           position: "relative",
+          overflow: "hidden",
           backgroundColor: "#071014",
           color: "#edf8f5",
           fontFamily:
-            "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+            "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
         }}
       >
         <div
           style={{
             position: "absolute",
             inset: 0,
-            display: "flex",
             backgroundColor: "#071014",
             backgroundImage:
-              "radial-gradient(circle at 15% 15%, rgba(84,240,178,0.16), transparent 28%), radial-gradient(circle at 85% 10%, rgba(91,200,255,0.14), transparent 30%)"
+              "radial-gradient(circle at top left, rgba(84,240,178,0.16), transparent 34%), radial-gradient(circle at top right, rgba(91,200,255,0.12), transparent 36%)"
           }}
         />
+
         <div
           style={{
+            position: "absolute",
+            top: 54,
+            left: 64,
+            right: 64,
             display: "flex",
-            width: "100%",
-            padding: "56px 64px",
-            justifyContent: "space-between",
-            alignItems: "stretch",
-            gap: 36,
-            position: "relative"
+            alignItems: "center",
+            justifyContent: "space-between"
           }}
         >
           <div
             style={{
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              width: 660
+              fontSize: 54,
+              fontWeight: 700,
+              letterSpacing: 0
+            }}
+          >
+            Sigma
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.1)",
+              backgroundColor: "rgba(255,255,255,0.03)",
+              padding: "14px 20px",
+              fontSize: 20,
+              color: "#cbd5e1"
             }}
           >
             <div
               style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 20
+                width: 10,
+                height: 10,
+                borderRadius: 999,
+                backgroundColor: "#54f0b2"
               }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  fontSize: 58,
-                  fontWeight: 700,
-                  letterSpacing: 1
-                }}
-              >
-                Sigma
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  maxWidth: 640,
-                  fontSize: 72,
-                  lineHeight: 1.05,
-                  fontWeight: 700
-                }}
-              >
-                AI-Powered Token Risk Analysis
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  maxWidth: 620,
-                  fontSize: 30,
-                  lineHeight: 1.35,
-                  color: "#c3d3d0"
-                }}
-              >
-                Analyze token risk, liquidity, volume, and price action with
-                AI-powered summaries.
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                fontSize: 24,
-                color: "#54f0b2"
-              }}
-            >
-              <div
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: 999,
-                  backgroundColor: "#54f0b2"
-                }}
-              />
-              Live token intelligence
-            </div>
+            />
+            Live token intelligence
+          </div>
+        </div>
+
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            width: "100%",
+            padding: "120px 64px 64px"
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignSelf: "flex-start",
+              borderRadius: 999,
+              border: "1px solid rgba(84,240,178,0.3)",
+              backgroundColor: "rgba(84,240,178,0.1)",
+              padding: "12px 22px",
+              fontSize: 22,
+              fontWeight: 500,
+              color: "#54f0b2"
+            }}
+          >
+            Crypto risk analysis for everyday investors
           </div>
 
           <div
             style={{
-              width: 376,
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "center"
+              maxWidth: 860,
+              marginTop: 28,
+              fontSize: 88,
+              lineHeight: 1.02,
+              fontWeight: 700
+            }}
+          >
+            AI-Powered Token Risk Analysis
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              maxWidth: 820,
+              marginTop: 26,
+              fontSize: 31,
+              lineHeight: 1.4,
+              color: "#cbd5e1"
+            }}
+          >
+            Instantly analyze token risk, liquidity, and trading activity with
+            AI-powered insights.
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              marginTop: 34
             }}
           >
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
-                gap: 18,
-                padding: 28,
-                borderRadius: 28,
-                border: "1px solid rgba(255,255,255,0.12)",
-                backgroundColor: "rgba(16,26,32,0.88)",
-                boxShadow: "0 24px 80px rgba(0,0,0,0.24)"
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 68,
+                borderRadius: 22,
+                backgroundColor: "#54f0b2",
+                color: "#071014",
+                padding: "0 30px",
+                fontSize: 28,
+                fontWeight: 800
               }}
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      fontSize: 18,
-                      color: "#94a3b8"
-                    }}
-                  >
-                    Risk Score
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      fontSize: 28,
-                      fontWeight: 700,
-                      color: "#54f0b2"
-                    }}
-                  >
-                    Lower Risk
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 56,
-                    fontWeight: 700
-                  }}
-                >
-                  99
-                </div>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  height: 12,
-                  borderRadius: 999,
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                  overflow: "hidden"
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    width: "99%",
-                    backgroundColor: "#54f0b2"
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  marginTop: 10
-                }}
-              >
-                {["Liquidity", "24h Volume", "AI Summary"].map((label) => (
-                  <div
-                    key={label}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      padding: "14px 16px",
-                      borderRadius: 18,
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      backgroundColor: "rgba(255,255,255,0.03)",
-                      fontSize: 19
-                    }}
-                  >
-                    <span style={{ display: "flex", color: "#94a3b8" }}>
-                      {label}
-                    </span>
-                    <span style={{ display: "flex", color: "#edf8f5" }}>
-                      Ready
-                    </span>
-                  </div>
-                ))}
-              </div>
+              Launch App
             </div>
           </div>
         </div>
