@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+const siteUrl = "https://www.sigmadapp.xyz";
 const title = "SIGMA | AI-Powered Token Risk Analysis";
 const description =
-  "Analyze token risk, liquidity, volume, and price action with AI-powered summaries.";
-const socialImage = "/social-icon-preview.jpeg";
+  "AI-powered token risk analysis for traders who want better market insight.";
+const socialImage = "/api/og";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -17,15 +17,15 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: "/",
+    url: siteUrl,
     siteName: "SIGMA",
     type: "website",
     images: [
       {
         url: socialImage,
-        width: 1536,
-        height: 1024,
-        alt: "SIGMA token risk analysis preview"
+        width: 1200,
+        height: 630,
+        alt: "SIGMA homepage hero preview"
       }
     ]
   },
