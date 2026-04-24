@@ -5,7 +5,7 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
 const title = "SIGMA | AI-Powered Token Risk Analysis";
 const description =
   "Analyze token risk, liquidity, volume, and price action with AI-powered summaries.";
-const socialImage = "/opengraph-image";
+const socialImage = "/social-preview.jpeg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -23,8 +23,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: socialImage,
-        width: 1200,
-        height: 630,
+        width: 1080,
+        height: 360,
         alt: "SIGMA token risk analysis preview"
       }
     ]
