@@ -29,3 +29,9 @@ body {
   background: rgba(84, 240, 178, 0.35);
   color: white;
 }
+
+.result-wrap {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}

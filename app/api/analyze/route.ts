@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { detectBestPair, type DexscreenerPair } from "@/lib/dexscreener";
 import { searchPools } from "@/lib/geckoterminal";
-import { getExplorerAnalysis } from "@/lib/explorer";
 import { detectLaunch } from "@/lib/launchDetection";
 import { calculateRiskScore } from "@/lib/riskScore";
+import {
+  getEvmHolderStats,
+  getEvmTokenHolders,
+  getSolanaHolderStats,
+  getSolanaTopHolders
+} from "@/lib/moralis";
+import {
+  normalizeEvmHolderData,
+  normalizeSolanaHolderData,
+  type HolderDistribution
+} from "@/lib/holderAnalysis";
 
 interface AnalyzeRequestBody {
   address?: string;
@@ -76,6 +86,26 @@ function describeLpSafety(input: {
   };
 }
 
+function mapMoralisChain(chain: string | null | undefined) {
+  switch (chain) {
+    case "ethereum":
+      return "eth";
+    case "base":
+      return "base";
+    case "bsc":
+      return "bsc";
+    case "polygon":
+      return "polygon";
+    case "arbitrum":
+      return "arbitrum";
+    case "avalanche":
+    case "avax":
+      return "avalanche";
+    default:
+      return null;
+  }
+}
+
 function buildFallbackPairFromGecko(
   query: string,
   pool: Awaited<ReturnType<typeof searchPools>>[number] | undefined
@@ -102,6 +132,12 @@ function buildFallbackPairFromGecko(
     volume: {
       h24: Number(pool.attributes?.volume_usd?.h24 ?? 0)
     },
+    txns: {
+      h24: {
+        buys: undefined,
+        sells: undefined
+      }
+    },
     priceChange: {
       h24: Number(pool.attributes?.price_change_percentage?.h24 ?? 0)
     },
@@ -125,25 +161,22 @@ function percentFromRaw(rawValue: string | null, rawTotal: string | null) {
 function buildAnalystReport(input: {
   symbol: string;
   launchSummary: string;
-  launchType: string;
-  lpDetails: string;
   liquidityUsd: number;
   dexName: string;
   riskVerdict: string;
   riskReasons: string[];
-  migrationStatus: string;
-  whaleSummary: string;
+  marketRiskSummary: string;
 }) {
   const whatHappened = `${input.symbol} is currently trading primarily on ${input.dexName} with about $${Math.round(
     input.liquidityUsd
   ).toLocaleString()} of visible liquidity. ${input.launchSummary}`;
 
-  const whyItMatters = `${input.lpDetails} ${input.migrationStatus} ${input.whaleSummary}`.trim();
+  const whyItMatters = input.marketRiskSummary;
 
   const whatToVerifyNext = [
-    "Confirm LP custody directly on the explorer before trusting the liquidity profile.",
-    "Check whether deployer-linked wallets are still receiving or redistributing supply.",
-    "Verify whether the current market is the token’s first liquidity venue or a post-migration pool."
+    "Track whether liquidity stays stable as volume rotates through the pool.",
+    "Watch for abrupt price and activity shifts across the primary trading pair.",
+    "Enable explorer-backed checks later for deployer, holder, and LP custody verification."
   ];
 
   const finalVerdict = input.riskReasons.length
@@ -189,81 +222,84 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const explorer = await getExplorerAnalysis({
-      chain: pair.chainId,
-      tokenAddress: address,
-      lpTokenAddress: pair.pairAddress ?? null
+    const launch = detectLaunch(pair, {
+      chainId: null,
+      explorerName: null,
+      deployerAddress: null,
+      deployerTokenBalance: null,
+      contractCreatedAt: null,
+      creationTxHash: null,
+      totalSupply: null,
+      holderCount: null,
+      topHolders: [],
+      sourceCode: null,
+      sourceVerified: false,
+      lpBurnedPercent: null,
+      lpLockedPercent: null,
+      lpDeployerPercent: null
     });
-
-    const launch = detectLaunch(pair, explorer);
     const liquidityUsd = getNumber(pair.liquidity?.usd);
     const volume24h = getNumber(pair.volume?.h24);
     const priceChange24h = getNumber(pair.priceChange?.h24);
     const poolAgeHours = poolAgeHoursFromTimestamp(pair.pairCreatedAt ?? null);
     const dexName = formatDexName(pair.dexId);
+    const buys24h = pair.txns?.h24?.buys ?? null;
+    const sells24h = pair.txns?.h24?.sells ?? null;
 
-    const lpSafety = describeLpSafety({
-      burned: explorer.lpBurnedPercent,
-      locked: explorer.lpLockedPercent,
-      deployer: explorer.lpDeployerPercent
-    });
+    let holderDistribution: HolderDistribution | null = null;
+    let holderDataAvailable = false;
 
-    const deployerTokenPercent = percentFromRaw(
-      explorer.deployerTokenBalance,
-      explorer.totalSupply
-    );
+    try {
+      if (pair.chainId === "solana") {
+        const [holderStats, topHolders] = await Promise.all([
+          getSolanaHolderStats(address),
+          getSolanaTopHolders(address)
+        ]);
+        holderDistribution = normalizeSolanaHolderData({
+          stats: holderStats,
+          holders: topHolders
+        });
+      } else {
+        const moralisChain = mapMoralisChain(pair.chainId);
+        if (moralisChain) {
+          const [holderStats, topHolders] = await Promise.all([
+            getEvmHolderStats(address, moralisChain),
+            getEvmTokenHolders(address, moralisChain)
+          ]);
+          holderDistribution = normalizeEvmHolderData({
+            stats: holderStats,
+            holders: topHolders
+          });
+        }
+      }
+      holderDataAvailable = Boolean(holderDistribution);
+    } catch {
+      holderDistribution = null;
+      holderDataAvailable = false;
+    }
 
-    const topHolderPercent =
-      explorer.topHolders.length > 0 && explorer.totalSupply
-        ? Number(
-            (
-              (Number(explorer.topHolders[0].quantity) / Number(explorer.totalSupply)) *
-              100
-            ).toFixed(2)
-          )
-        : null;
-
-    const top10HolderPercent =
-      explorer.topHolders.length > 0 && explorer.totalSupply
-        ? Number(
-            (
-              (explorer.topHolders.reduce((sum, holder) => {
-                return sum + Number(holder.quantity);
-              }, 0) /
-                Number(explorer.totalSupply)) *
-              100
-            ).toFixed(2)
-          )
-        : null;
-
-    const contractOwnedSupply =
-      explorer.topHolders.length > 0 && explorer.totalSupply
-        ? Number(
-            (
-              (explorer.topHolders
-                .filter((holder) => holder.addressType === "C")
-                .reduce((sum, holder) => sum + Number(holder.quantity), 0) /
-                Number(explorer.totalSupply)) *
-              100
-            ).toFixed(2)
-          )
-        : null;
-
-    const suspiciousWhaleConcentration =
-      topHolderPercent !== null && topHolderPercent >= 20
-        ? `Top wallet controls about ${topHolderPercent}% of supply.`
-        : top10HolderPercent !== null && top10HolderPercent >= 60
-          ? `Top wallets control about ${top10HolderPercent}% of supply.`
-          : "No dominant whale cluster was confirmed from the available holder data.";
+    const marketRiskSummary = [
+      liquidityUsd < 15000
+        ? "Liquidity is still thin enough to move sharply under pressure."
+        : "Liquidity depth is healthier than the thinnest new-token pools.",
+      volume24h < 10000
+        ? "Trading activity is still light, so price discovery may be unstable."
+        : "Trading activity suggests the market is at least active enough for live price discovery.",
+      priceChange24h < -25
+        ? "Recent downside volatility raises execution and momentum risk."
+        : priceChange24h > 60
+          ? "Recent upside volatility looks aggressive and could mean fast mean reversion."
+          : "Recent price movement is active but not extreme."
+    ].join(" ");
 
     const risk = calculateRiskScore({
       liquidityUsd,
       volume24h,
       priceChange24h,
-      lpSafetyStatus: lpSafety.status,
-      deployerTokenPercent,
-      top10HolderPercent,
-      contractOwnedSupplyPercent: contractOwnedSupply,
+      lpSafetyStatus: "unknown",
+      deployerTokenPercent: null,
+      top10HolderPercent: holderDistribution?.top10Percent ?? null,
+      contractOwnedSupplyPercent: null,
       migrationLikely: launch.launchType === "curve-to-LP migration",
       launchConfidence: launch.confidence
     });
@@ -271,27 +307,21 @@ export async function POST(request: NextRequest) {
     const report = buildAnalystReport({
       symbol: pair.baseToken?.symbol ?? "Unknown",
       launchSummary: launch.summary,
-      launchType: launch.launchType,
-      lpDetails: lpSafety.details,
       liquidityUsd,
       dexName,
       riskVerdict: risk.verdict,
       riskReasons: risk.reasons,
-      migrationStatus: launch.migrationStatus,
-      whaleSummary: suspiciousWhaleConcentration
+      marketRiskSummary:
+        holderDistribution !== null
+          ? `${marketRiskSummary} Top holder controls about ${holderDistribution.topHolderPercent}% of supply, while the top ten wallets control about ${holderDistribution.top10Percent}%.`
+          : marketRiskSummary
     });
 
     const dataAvailability: string[] = [];
 
-    if (!explorer.explorerName) {
+    if (!holderDataAvailable) {
       dataAvailability.push(
-        "Explorer-backed deployer and holder data is unavailable without a server-side explorer API key."
-      );
-    }
-
-    if (explorer.topHolders.length === 0) {
-      dataAvailability.push(
-        "Top holder concentration could not be fully verified."
+        "On-chain holder data unavailable"
       );
     }
 
@@ -320,35 +350,15 @@ export async function POST(request: NextRequest) {
           priceChange24h,
           poolAgeHours
         },
-        lpSafety: {
-          status: lpSafety.status,
-          details: lpSafety.details,
-          lpTokenAddress: pair.pairAddress ?? null,
-          burnedPercent: explorer.lpBurnedPercent,
-          lockedPercent: explorer.lpLockedPercent,
-          deployerHeldPercent: explorer.lpDeployerPercent
+        activityAnalysis: {
+          buys24h,
+          sells24h,
+          summary:
+            buys24h !== null && sells24h !== null
+              ? `The pair recorded about ${buys24h} buys and ${sells24h} sells in the last 24 hours.`
+              : "Not enough market activity data to verify."
         },
-        holderRisk: {
-          deployerAddress:
-            explorer.deployerAddress ?? "Not enough data to verify.",
-          deployerTokenPercent,
-          holderCount: explorer.holderCount,
-          topHolderPercent,
-          top10HolderPercent,
-          contractOwnedSupplyPercent: contractOwnedSupply,
-          suspiciousWhaleConcentration,
-          details: [
-            deployerTokenPercent !== null
-              ? `Deployer wallet controls about ${deployerTokenPercent}% of current supply.`
-              : "Deployer token balance could not be verified.",
-            top10HolderPercent !== null
-              ? `Top tracked holders control about ${top10HolderPercent}% of supply.`
-              : "Top holder concentration is not enough data to verify.",
-            contractOwnedSupply !== null
-              ? `Contract-owned supply is about ${contractOwnedSupply}%.`
-              : "Contract-owned supply is not enough data to verify."
-          ]
-        },
+        holderDistribution,
         analystReport: report,
         riskScore: risk.score,
         riskVerdict: risk.verdict,
