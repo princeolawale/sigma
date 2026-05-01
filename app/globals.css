@@ -12,21 +12,21 @@
 
 html {
   min-height: 100%;
-  background: #071014;
+  background: #05070b;
 }
 
 body {
   min-height: 100%;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(84, 240, 178, 0.14), transparent 34rem),
-    radial-gradient(circle at top right, rgba(91, 200, 255, 0.12), transparent 36rem),
-    #071014;
-  color: #edf8f5;
+    radial-gradient(circle at top left, rgba(47, 139, 255, 0.12), transparent 34rem),
+    radial-gradient(circle at top right, rgba(63, 218, 199, 0.12), transparent 36rem),
+    #05070b;
+  color: #ffffff;
 }
 
 ::selection {
-  background: rgba(84, 240, 178, 0.35);
+  background: rgba(47, 139, 255, 0.35);
   color: white;
 }
 

@@ -50,16 +50,16 @@ function SocialIconLink({
 
 export function SiteHeader() {
   return (
-    <nav className="sticky top-0 z-30 border-b border-white/10 bg-ink/80 backdrop-blur-xl sm:static">
+    <nav className="sticky top-0 z-30 border-b border-primary/10 bg-ink/85 backdrop-blur-xl sm:static">
       <div className="relative mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-3" aria-label="Go to Sigma home">
-          <span className="font-serif text-4xl font-bold italic tracking-normal text-white drop-shadow-[0_0_18px_rgba(84,240,178,0.28)] sm:text-5xl">
+          <span className="font-serif text-4xl font-bold italic tracking-normal text-white drop-shadow-[0_0_18px_rgba(47,139,255,0.28)] sm:text-5xl">
             Sigma
           </span>
         </Link>
         <div className="hidden items-center gap-3 sm:flex">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-slate-300">
-            <span className="h-2 w-2 rounded-full bg-acid shadow-[0_0_18px_rgba(84,240,178,0.9)]" />
+          <div className="flex items-center gap-2 rounded-full border border-teal/20 bg-white/[0.03] px-4 py-2 text-sm text-white/70">
+            <span className="h-2 w-2 rounded-full bg-acid shadow-[0_0_18px_rgba(107,230,117,0.9)]" />
             Live token intelligence
           </div>
           <div className="flex items-center gap-2">
@@ -67,7 +67,7 @@ export function SiteHeader() {
               <SocialIconLink
                 key={social.name}
                 social={social}
-                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.03] text-slate-300 transition hover:border-acid/50 hover:text-acid focus:outline-none focus:ring-2 focus:ring-acid/60"
+                className="grid h-10 w-10 place-items-center rounded-full border border-primary/15 bg-white/[0.03] text-white/70 transition hover:border-teal/50 hover:text-teal focus:outline-none focus:ring-2 focus:ring-primary/60"
                 iconClassName="h-5 w-5"
               />
             ))}
@@ -76,7 +76,7 @@ export function SiteHeader() {
         <details className="group sm:hidden">
           <summary
             aria-label="Open navigation menu"
-            className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition hover:border-acid/50 [&::-webkit-details-marker]:hidden"
+            className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-primary/15 bg-white/[0.04] text-white transition hover:border-teal/50 [&::-webkit-details-marker]:hidden"
           >
             <svg
               aria-hidden="true"
@@ -90,28 +90,28 @@ export function SiteHeader() {
               <path d="M4 7h16M4 12h16M4 17h16" />
             </svg>
           </summary>
-          <div className="absolute right-5 top-16 z-20 w-56 rounded-3xl border border-white/10 bg-panel/95 p-3 shadow-glow backdrop-blur-xl">
+          <div className="absolute right-5 top-16 z-20 w-56 rounded-3xl border border-primary/15 bg-panel/95 p-3 shadow-glow backdrop-blur-xl">
             <Link
               href="/"
-              className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06] hover:text-acid"
+              className="block rounded-2xl px-4 py-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.06] hover:text-teal"
             >
               Home
             </Link>
             <Link
               href="/get-started"
-              className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06] hover:text-acid"
+              className="block rounded-2xl px-4 py-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.06] hover:text-teal"
             >
               Launch App
             </Link>
             <Link
               href="/#why-choose-us"
-              className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06] hover:text-acid"
+              className="block rounded-2xl px-4 py-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.06] hover:text-teal"
             >
               Why Choose Us
             </Link>
             <Link
               href="/#how-it-works"
-              className="block rounded-2xl px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.06] hover:text-acid"
+              className="block rounded-2xl px-4 py-3 text-sm font-medium text-white/80 transition hover:bg-white/[0.06] hover:text-teal"
             >
               How It Works
             </Link>
@@ -124,7 +124,7 @@ export function SiteHeader() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.label}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 text-sm font-medium text-slate-200 transition hover:border-acid/40 hover:text-acid"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-primary/15 bg-white/[0.03] px-3 py-3 text-sm font-medium text-white/80 transition hover:border-teal/40 hover:text-teal"
                 >
                   <svg
                     aria-hidden="true"
@@ -147,15 +147,15 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-white/10 bg-ink/70">
+    <footer className="mt-auto border-t border-primary/10 bg-ink/70">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-5 py-8 text-center sm:px-8">
-        <p className="text-sm text-slate-400">2026 Sigma. All rights reserved.</p>
+        <p className="text-sm text-white/60">2026 Sigma. All rights reserved.</p>
         <div className="flex items-center gap-3">
           {socials.map((social) => (
             <SocialIconLink
               key={social.name}
               social={social}
-              className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.03] text-slate-300 transition hover:border-acid/50 hover:text-acid focus:outline-none focus:ring-2 focus:ring-acid/60"
+              className="grid h-11 w-11 place-items-center rounded-full border border-primary/15 bg-white/[0.03] text-white/70 transition hover:border-teal/50 hover:text-teal focus:outline-none focus:ring-2 focus:ring-primary/60"
               iconClassName="h-5 w-5"
             />
           ))}

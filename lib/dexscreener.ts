@@ -12,6 +12,7 @@ export interface DexscreenerPair {
   labels?: string[];
   pairCreatedAt?: number;
   fdv?: number;
+  priceUsd?: string;
   baseToken?: DexscreenerTokenRef;
   quoteToken?: DexscreenerTokenRef;
   liquidity?: {

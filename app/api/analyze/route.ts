@@ -25,7 +25,7 @@ function getNumber(value: unknown) {
 
 function formatDexName(dexId: string | null | undefined) {
   if (!dexId) {
-    return "Not enough data to verify.";
+    return "Unavailable";
   }
 
   return dexId
@@ -40,50 +40,6 @@ function poolAgeHoursFromTimestamp(value: number | null | undefined) {
   }
 
   return Number((((Date.now() - value) / 1000) / 3600).toFixed(2));
-}
-
-function describeLpSafety(input: {
-  burned: number | null;
-  locked: number | null;
-  deployer: number | null;
-}) {
-  if (input.burned !== null && input.burned >= 50) {
-    return {
-      status: "burned",
-      details: `At least ${input.burned}% of the LP appears to sit in burn addresses.`
-    };
-  }
-
-  if (input.locked !== null && input.locked >= 50) {
-    return {
-      status: "locked",
-      details: `At least ${input.locked}% of the LP appears to be held by known lockers.`
-    };
-  }
-
-  if (input.deployer !== null && input.deployer >= 10) {
-    return {
-      status: "deployer-held",
-      details: `The deployer still appears to control about ${input.deployer}% of LP ownership.`
-    };
-  }
-
-  if (
-    input.burned !== null ||
-    input.locked !== null ||
-    input.deployer !== null
-  ) {
-    return {
-      status: "protocol-held",
-      details:
-        "LP ownership does not look heavily deployer-held, but protocol or multisig custody still needs direct verification."
-    };
-  }
-
-  return {
-    status: "unknown",
-    details: "Not enough data to verify."
-  };
 }
 
 function mapMoralisChain(chain: string | null | undefined) {
@@ -132,6 +88,7 @@ function buildFallbackPairFromGecko(
     volume: {
       h24: Number(pool.attributes?.volume_usd?.h24 ?? 0)
     },
+    priceUsd: pool.attributes?.base_token_price_usd ?? undefined,
     txns: {
       h24: {
         buys: undefined,
@@ -241,6 +198,7 @@ export async function POST(request: NextRequest) {
     const liquidityUsd = getNumber(pair.liquidity?.usd);
     const volume24h = getNumber(pair.volume?.h24);
     const priceChange24h = getNumber(pair.priceChange?.h24);
+    const priceUsd = Number(pair.priceUsd ?? 0);
     const poolAgeHours = poolAgeHoursFromTimestamp(pair.pairCreatedAt ?? null);
     const dexName = formatDexName(pair.dexId);
     const buys24h = pair.txns?.h24?.buys ?? null;
@@ -318,6 +276,13 @@ export async function POST(request: NextRequest) {
     });
 
     const dataAvailability: string[] = [];
+    const marketCapUsd =
+      holderDistribution?.supply !== null &&
+      holderDistribution?.supply !== undefined &&
+      Number.isFinite(priceUsd) &&
+      priceUsd > 0
+        ? Number((holderDistribution.supply * priceUsd).toFixed(2))
+        : null;
 
     if (!holderDataAvailable) {
       dataAvailability.push(
@@ -342,9 +307,11 @@ export async function POST(request: NextRequest) {
         },
         liquidityBreakdown: {
           dexName,
-          pairAddress: pair.pairAddress ?? "Not enough data to verify.",
+          pairAddress: pair.pairAddress ?? "Unavailable",
           baseToken: pair.baseToken?.symbol ?? "Unknown",
           quoteToken: pair.quoteToken?.symbol ?? "Unknown",
+          priceUsd: Number.isFinite(priceUsd) && priceUsd > 0 ? priceUsd : null,
+          marketCapUsd,
           liquidityUsd,
           volume24h,
           priceChange24h,
