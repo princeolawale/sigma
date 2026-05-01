@@ -29,7 +29,7 @@ export default function TokenAnalyzer() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/token/analyze", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -96,6 +96,11 @@ export default function TokenAnalyzer() {
           </p>
         ) : null}
       </form>
+
+      <p className="mt-4 text-center text-sm text-slate-400">
+        Deep forensics scans can take a few extra seconds while SIGMA checks
+        market, launch, and explorer data.
+      </p>
 
       {result ? <ResultCard result={result} /> : null}
     </div>
