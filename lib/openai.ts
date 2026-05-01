@@ -3,9 +3,22 @@ import OpenAI from "openai";
 export interface RiskSummaryInput {
   symbol: string;
   liquidityUsd: number;
+  marketCapUsd: number | null;
   volume24h: number;
   priceChange24h: number;
   riskScore: number;
+  riskLevel: string;
+  breakdown: {
+    liquidity: number;
+    marketCap: number;
+    holders: number;
+    activity: number;
+    pressure: number;
+    volatility: number;
+    pool: number;
+    security: number;
+  };
+  penalties: string[];
 }
 
 let client: OpenAI | null = null;
@@ -27,9 +40,13 @@ function getOpenAIClient() {
 export async function generateRiskSummary({
   symbol,
   liquidityUsd,
+  marketCapUsd,
   volume24h,
   priceChange24h,
-  riskScore
+  riskScore,
+  riskLevel,
+  breakdown,
+  penalties
 }: RiskSummaryInput) {
   const openai = getOpenAIClient();
 
@@ -40,16 +57,20 @@ export async function generateRiskSummary({
       {
         role: "system",
         content:
-          "You write concise, beginner-friendly crypto token risk summaries. Do not use hype. Do not provide financial advice. Keep the summary to 1-2 short sentences."
+          "You explain a deterministic crypto token risk score. Do not invent or change the score. Do not override the risk level. Keep the summary to 2 short sentences, trader-friendly, and non-hype."
       },
       {
         role: "user",
         content: [
           `Token symbol: ${symbol}`,
           `Liquidity USD: ${liquidityUsd}`,
+          `Market cap USD: ${marketCapUsd ?? "unavailable"}`,
           `24h volume USD: ${volume24h}`,
           `24h price change percent: ${priceChange24h}`,
           `Risk score out of 100: ${riskScore}`
+          ,`Risk level: ${riskLevel}`,
+          `Breakdown: ${JSON.stringify(breakdown)}`,
+          `Penalties: ${penalties.join(", ") || "none"}`
         ].join("\n")
       }
     ]

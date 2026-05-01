@@ -21,7 +21,7 @@ export default function GetStartedPage() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
           Drop in a contract address to review liquidity, trading activity, risk
-          score, and an AI-powered summary.
+          score, category breakdown, and a concise AI explanation.
         </p>
 
         <TokenAnalyzer />

@@ -15,7 +15,7 @@ export interface TokenAnalysisResult {
     summary: string;
     migrationStatus: string;
     indicators: string[];
-  };
+  } | null;
   liquidityBreakdown: {
     dexName: string;
     pairAddress: string;
@@ -64,6 +64,17 @@ export interface TokenAnalysisResult {
   };
   riskScore: number;
   riskVerdict: string;
+  scoreBreakdown: {
+    liquidity: number;
+    marketCap: number;
+    holders: number;
+    activity: number;
+    pressure: number;
+    volatility: number;
+    pool: number;
+    security: number;
+  };
+  scorePenalties: string[];
   summary: string;
   dataAvailability: string[];
 }
@@ -154,7 +165,7 @@ function pickVariant(variants: string[], seed: number) {
 }
 
 function getRiskTone(score: number) {
-  if (score >= 75) {
+  if (score >= 85) {
     return {
       color: "text-acid",
       bar: "bg-acid",
@@ -163,12 +174,21 @@ function getRiskTone(score: number) {
     };
   }
 
-  if (score >= 45) {
+  if (score >= 70) {
     return {
       color: "text-warning",
       bar: "bg-warning",
       border: "border-warning/30",
       glow: "shadow-[0_18px_44px_rgba(245,197,66,0.12)]"
+    };
+  }
+
+  if (score >= 50) {
+    return {
+      color: "text-orange-400",
+      bar: "bg-orange-400",
+      border: "border-orange-400/30",
+      glow: "shadow-[0_18px_44px_rgba(251,146,60,0.14)]"
     };
   }
 
@@ -251,6 +271,19 @@ function toneClasses(tone: SignalTone) {
         bg: "bg-white/[0.02]"
       };
   }
+}
+
+function getBreakdownItems(result: TokenAnalysisResult) {
+  return [
+    { label: "Liquidity", value: `${result.scoreBreakdown.liquidity} / 20` },
+    { label: "Market Cap", value: `${result.scoreBreakdown.marketCap} / 15` },
+    { label: "Holders", value: `${result.scoreBreakdown.holders} / 20` },
+    { label: "Activity", value: `${result.scoreBreakdown.activity} / 15` },
+    { label: "Pressure", value: `${result.scoreBreakdown.pressure} / 10` },
+    { label: "Volatility", value: `${result.scoreBreakdown.volatility} / 10` },
+    { label: "Pool", value: `${result.scoreBreakdown.pool} / 5` },
+    { label: "Security", value: `${result.scoreBreakdown.security} / 10` }
+  ];
 }
 
 function buildRiskSignals(result: TokenAnalysisResult): SignalItem[] {
@@ -580,6 +613,7 @@ export default function ResultCard({ result }: ResultCardProps) {
     result.activityAnalysis.buys24h
   );
   const signals = useMemo(() => buildRiskSignals(result), [result]);
+  const breakdownItems = useMemo(() => getBreakdownItems(result), [result]);
 
   async function handleCopy(key: string, value: string) {
     try {
@@ -924,8 +958,45 @@ export default function ResultCard({ result }: ResultCardProps) {
       <Section title="Final Verdict">
         <div className="space-y-4">
           <p className="text-sm leading-6 text-white/88 sm:text-base sm:leading-7">
+            {result.summary}
+          </p>
+          <p className="text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
             {result.analystReport.finalVerdict}
           </p>
+          <details className="rounded-2xl border border-primary/15 bg-white/[0.02] p-3 sm:p-4">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-white/88">
+              Score breakdown
+            </summary>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {breakdownItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-primary/15 bg-ink/60 p-3"
+                >
+                  <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-white">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {result.scorePenalties.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/8 p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-danger">
+                  Penalties
+                </p>
+                <div className="mt-2 space-y-2">
+                  {result.scorePenalties.map((penalty) => (
+                    <p key={penalty} className="text-sm leading-6 text-white/75">
+                      {penalty}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </details>
           <div className="space-y-2">
             {result.analystReport.whatToVerifyNext.map((line) => (
               <p key={line} className="text-sm leading-6 text-white/70">

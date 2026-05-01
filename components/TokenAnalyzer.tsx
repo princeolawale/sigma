@@ -99,7 +99,7 @@ export default function TokenAnalyzer() {
 
       <p className="mt-4 text-center text-sm text-white/60">
         Deep forensics scans can take a few extra seconds while SIGMA checks
-        market, launch, and holder distribution data.
+        market structure and holder distribution data.
       </p>
 
       {result ? <ResultCard result={result} /> : null}

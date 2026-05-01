@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { detectBestPair, type DexscreenerPair } from "@/lib/dexscreener";
-import { detectLaunch } from "@/lib/launchDetection";
 import { calculateRiskScore } from "@/lib/riskScore";
+import { generateRiskSummary } from "@/lib/openai";
 import {
   getEvmHolderStats,
   getEvmTokenHolders,
@@ -91,9 +91,10 @@ function buildAnalystReport(input: {
   volume24h: number;
   priceChange24h: number;
   dexName: string;
-  riskVerdict: string;
+  riskLevel: string;
   riskReasons: string[];
-  marketRiskSummary: string;
+  penalties: string[];
+  summary: string;
 }) {
   const whatHappened = `${input.symbol} is currently trading primarily on ${input.dexName} with about $${Math.round(
     input.liquidityUsd
@@ -101,22 +102,22 @@ function buildAnalystReport(input: {
     input.volume24h
   ).toLocaleString()} in 24h volume, and a ${input.priceChange24h >= 0 ? "+" : ""}${input.priceChange24h.toFixed(2)}% move over the last day.${input.marketCapUsd !== null ? ` Estimated market cap sits near $${Math.round(input.marketCapUsd).toLocaleString()}.` : ""}`;
 
-  const whyItMatters = input.marketRiskSummary;
+  const whyItMatters = input.summary;
 
   const whatToVerifyNext = [
     "Track whether liquidity stays stable as volume rotates through the pool.",
-    "Watch for abrupt price and activity shifts across the primary trading pair.",
-    "Enable explorer-backed checks later for deployer, holder, and LP custody verification."
+    "Watch for abrupt price and activity shifts across the primary trading pair."
   ];
 
-  const preferredReason =
-    input.riskReasons.find((reason) => {
-      return !reason.toLowerCase().includes("launch path");
-    }) ?? input.riskReasons[0];
+  if (input.penalties.length > 0) {
+    whatToVerifyNext.push(`Review current penalties: ${input.penalties.join(", ")}.`);
+  }
+
+  const preferredReason = input.riskReasons[0];
 
   const finalVerdict = input.riskReasons.length
-    ? `${input.riskVerdict}: ${preferredReason}`
-    : `${input.riskVerdict}: Current public data does not show a single dominant red flag, but further wallet-level verification is still recommended.`;
+    ? `${input.riskLevel}: ${preferredReason}`
+    : `${input.riskLevel}: The deterministic score does not show a single dominant red flag, but further wallet-level verification is still recommended.`;
 
   return {
     whatHappened,
@@ -152,25 +153,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const launch = detectLaunch(pair, {
-      chainId: null,
-      explorerName: null,
-      deployerAddress: null,
-      deployerTokenBalance: null,
-      contractCreatedAt: null,
-      creationTxHash: null,
-      totalSupply: null,
-      holderCount: null,
-      topHolders: [],
-      sourceCode: null,
-      sourceVerified: false,
-      lpBurnedPercent: null,
-      lpLockedPercent: null,
-      lpDeployerPercent: null
-    });
     const liquidityUsd = getNumber(pair.liquidity?.usd);
     const volume24h = getNumber(pair.volume?.h24);
     const priceChange24h = getNumber(pair.priceChange?.h24);
+    const priceChangeM5 = typeof pair.priceChange?.m5 === "number" ? pair.priceChange.m5 : null;
+    const priceChangeH1 = typeof pair.priceChange?.h1 === "number" ? pair.priceChange.h1 : null;
+    const priceChangeH6 = typeof pair.priceChange?.h6 === "number" ? pair.priceChange.h6 : null;
     const priceUsd = Number(pair.priceUsd ?? 0);
     const marketCapUsd =
       getNumber(pair.marketCap) > 0
@@ -219,32 +207,42 @@ export async function POST(request: NextRequest) {
       holderDataAvailable = false;
     }
 
-    const marketRiskSummary = [
-      liquidityUsd < 15000
-        ? "Liquidity is still thin enough to move sharply under pressure."
-        : "Liquidity depth is healthier than the thinnest new-token pools.",
-      volume24h < 10000
-        ? "Trading activity is still light, so price discovery may be unstable."
-        : "Trading activity suggests the market is at least active enough for live price discovery.",
-      priceChange24h < -25
-        ? "Recent downside volatility raises execution and momentum risk."
-        : priceChange24h > 60
-          ? "Recent upside volatility looks aggressive and could mean fast mean reversion."
-          : "Recent price movement is active but not extreme."
-    ].join(" ");
-
     const risk = calculateRiskScore({
+      symbol: pair.baseToken?.symbol ?? "Unknown",
       liquidityUsd,
+      marketCapUsd,
       volume24h,
+      buys24h,
+      sells24h,
+      priceChangeM5,
+      priceChangeH1,
+      priceChangeH6,
       priceChange24h,
-      lpSafetyStatus: "unknown",
+      poolAgeHours,
       topHolderPercent: holderDistribution?.topHolderPercent ?? null,
-      deployerTokenPercent: null,
-      top10HolderPercent: holderDistribution?.top10Percent ?? null,
-      contractOwnedSupplyPercent: null,
-      migrationLikely: launch.launchType === "curve-to-LP migration",
-      launchConfidence: launch.confidence
+      top10HolderPercent: holderDistribution?.top10Percent ?? null
     });
+
+    const fallbackSummary = `${risk.riskLevel} at ${risk.score}/100. ${risk.reasons[0] ?? "The current market structure is mixed and should be monitored."}`;
+
+    let summary = fallbackSummary;
+    try {
+      if (process.env.OPENAI_API_KEY) {
+        summary = await generateRiskSummary({
+          symbol: pair.baseToken?.symbol ?? "Unknown",
+          liquidityUsd,
+          marketCapUsd,
+          volume24h,
+          priceChange24h,
+          riskScore: risk.score,
+          riskLevel: risk.riskLevel,
+          breakdown: risk.breakdown,
+          penalties: risk.penalties
+        });
+      }
+    } catch {
+      summary = fallbackSummary;
+    }
 
     const report = buildAnalystReport({
       symbol: pair.baseToken?.symbol ?? "Unknown",
@@ -253,12 +251,10 @@ export async function POST(request: NextRequest) {
       volume24h,
       priceChange24h,
       dexName,
-      riskVerdict: risk.verdict,
+      riskLevel: risk.riskLevel,
       riskReasons: risk.reasons,
-      marketRiskSummary:
-        holderDistribution !== null
-          ? `${marketRiskSummary} Top holder controls about ${holderDistribution.topHolderPercent}% of supply, while the top ten wallets control about ${holderDistribution.top10Percent}%.`
-          : marketRiskSummary
+      penalties: risk.penalties,
+      summary
     });
 
     const dataAvailability: string[] = [];
@@ -277,13 +273,7 @@ export async function POST(request: NextRequest) {
           name: pair.baseToken?.name ?? "Unknown",
           chain: pair.chainId ?? "unknown"
         },
-        launchIntelligence: {
-          launchType: launch.launchType,
-          confidence: launch.confidence,
-          summary: launch.summary,
-          migrationStatus: launch.migrationStatus,
-          indicators: launch.indicators
-        },
+        launchIntelligence: null,
         liquidityBreakdown: {
           dexName,
           pairAddress: pair.pairAddress ?? "Unavailable",
@@ -324,8 +314,10 @@ export async function POST(request: NextRequest) {
         holderDistribution,
         analystReport: report,
         riskScore: risk.score,
-        riskVerdict: risk.verdict,
-        summary: report.finalVerdict,
+        riskVerdict: risk.riskLevel,
+        scoreBreakdown: risk.breakdown,
+        scorePenalties: risk.penalties,
+        summary,
         dataAvailability
       }
     });

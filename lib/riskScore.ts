@@ -1,116 +1,256 @@
 export interface RiskScoreInput {
+  symbol: string;
   liquidityUsd: number;
+  marketCapUsd: number | null;
   volume24h: number;
+  buys24h: number | null;
+  sells24h: number | null;
+  priceChangeM5: number | null;
+  priceChangeH1: number | null;
+  priceChangeH6: number | null;
   priceChange24h: number;
-  lpSafetyStatus: string;
+  poolAgeHours: number | null;
   topHolderPercent: number | null;
-  deployerTokenPercent: number | null;
   top10HolderPercent: number | null;
-  contractOwnedSupplyPercent: number | null;
-  migrationLikely: boolean;
-  launchConfidence: "verified" | "likely" | "unknown";
+}
+
+export interface ScoreBreakdown {
+  liquidity: number;
+  marketCap: number;
+  holders: number;
+  activity: number;
+  pressure: number;
+  volatility: number;
+  pool: number;
+  security: number;
 }
 
 export interface RiskScoreResult {
   score: number;
-  verdict: string;
+  riskLevel: "Low Risk" | "Moderate" | "Risky" | "High Risk";
+  breakdown: ScoreBreakdown;
+  penalties: string[];
   reasons: string[];
 }
 
+const STABLECOINS = new Set(["USDT", "USDC", "DAI"]);
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getRiskLevel(score: number): RiskScoreResult["riskLevel"] {
+  if (score >= 85) {
+    return "Low Risk";
+  }
+
+  if (score >= 70) {
+    return "Moderate";
+  }
+
+  if (score >= 50) {
+    return "Risky";
+  }
+
+  return "High Risk";
+}
+
 export function calculateRiskScore({
+  symbol,
   liquidityUsd,
+  marketCapUsd,
   volume24h,
+  buys24h,
+  sells24h,
+  priceChangeM5,
+  priceChangeH1,
+  priceChangeH6,
   priceChange24h,
-  lpSafetyStatus,
+  poolAgeHours,
   topHolderPercent,
-  deployerTokenPercent,
-  top10HolderPercent,
-  contractOwnedSupplyPercent,
-  migrationLikely,
-  launchConfidence
+  top10HolderPercent
 }: RiskScoreInput): RiskScoreResult {
-  let score = 84;
+  const penalties: string[] = [];
   const reasons: string[] = [];
 
-  if (liquidityUsd < 15000) {
-    score -= 16;
-    reasons.push("Liquidity is thin for a fresh token market.");
-  } else if (liquidityUsd > 100000) {
-    score += 4;
+  const breakdown: ScoreBreakdown = {
+    liquidity: liquidityUsd > 2_000_000 ? 20
+      : liquidityUsd >= 500_000 ? 16
+      : liquidityUsd >= 150_000 ? 12
+      : liquidityUsd >= 50_000 ? 8
+      : 4,
+    marketCap:
+      marketCapUsd === null ? 0
+      : marketCapUsd > 5_000_000_000 ? 15
+      : marketCapUsd >= 500_000_000 ? 13
+      : marketCapUsd >= 50_000_000 ? 10
+      : marketCapUsd >= 5_000_000 ? 7
+      : 4,
+    holders:
+      topHolderPercent === null || top10HolderPercent === null
+        ? 0
+        : (topHolderPercent < 2 ? 10
+            : topHolderPercent < 5 ? 8
+            : topHolderPercent <= 10 ? 6
+            : topHolderPercent <= 20 ? 3
+            : 0) +
+          (top10HolderPercent < 20 ? 10
+            : top10HolderPercent < 40 ? 8
+            : top10HolderPercent <= 60 ? 5
+            : 2),
+    activity: 1,
+    pressure: 0,
+    volatility: 2,
+    pool: poolAgeHours === null ? 0 : poolAgeHours >= 24 * 30 ? 5 : poolAgeHours >= 72 ? 3 : 1,
+    security: 10
+  };
+
+  const volumeLiquidityRatio = liquidityUsd > 0 ? volume24h / liquidityUsd : 0;
+  breakdown.activity =
+    volumeLiquidityRatio >= 1 ? 15
+      : volumeLiquidityRatio >= 0.5 ? 12
+      : volumeLiquidityRatio >= 0.2 ? 8
+      : volumeLiquidityRatio >= 0.05 ? 4
+      : 1;
+
+  const totalTxns24h =
+    (buys24h ?? 0) + (sells24h ?? 0);
+  const buyShare =
+    totalTxns24h > 0 && buys24h !== null ? buys24h / totalTxns24h : null;
+  const sellShare =
+    totalTxns24h > 0 && sells24h !== null ? sells24h / totalTxns24h : null;
+
+  breakdown.pressure =
+    buyShare === null ? 0
+      : buyShare > 0.6 ? 10
+      : buyShare >= 0.4 ? 7
+      : buyShare >= 0.25 ? 4
+      : 1;
+
+  const absoluteMove = Math.abs(priceChange24h);
+  breakdown.volatility =
+    absoluteMove <= 8 ? 10
+      : absoluteMove <= 20 ? 8
+      : absoluteMove <= 40 ? 5
+      : 2;
+
+  if (liquidityUsd < 30_000) {
+    penalties.push("Liquidity below $30K");
+    reasons.push("Thin liquidity leaves the pool vulnerable to sharp slippage.");
   }
 
-  if (volume24h < 10000) {
-    score -= 10;
-    reasons.push("Trading activity is still light.");
-  } else if (volume24h > 100000) {
-    score += 3;
+  if (marketCapUsd !== null && marketCapUsd < 1_000_000) {
+    penalties.push("Market cap below $1M");
+    reasons.push("Sub-$1M market cap still sits in a fragile maturity range.");
   }
 
-  if (priceChange24h < -35) {
-    score -= 12;
-    reasons.push("Price action is volatile on the downside.");
-  } else if (priceChange24h > 80) {
-    score -= 8;
-    reasons.push("Price action is overheated and prone to sharp reversals.");
-  }
-
-  if (lpSafetyStatus === "deployer-held") {
-    score -= 22;
-    reasons.push("Deployer-held LP creates a direct rug vector.");
-  } else if (lpSafetyStatus === "unknown") {
-    score -= 10;
-    reasons.push("LP ownership could not be verified.");
-  } else if (lpSafetyStatus === "burned" || lpSafetyStatus === "locked") {
-    score += 4;
-  }
-
-  if (deployerTokenPercent !== null && deployerTokenPercent > 15) {
-    score -= 14;
-    reasons.push("Deployer retains a large token share.");
-  }
-
-  if (topHolderPercent !== null && topHolderPercent > 10) {
-    score -= 14;
+  if (topHolderPercent !== null && topHolderPercent > 15) {
+    penalties.push("Top holder above 15%");
     reasons.push("A single wallet controls too much supply.");
-  } else if (topHolderPercent !== null && topHolderPercent > 5) {
-    score -= 8;
-    reasons.push("One wallet holds enough supply to become a dump risk.");
   }
 
-  if (top10HolderPercent !== null && top10HolderPercent > 50) {
-    score -= 16;
-    reasons.push("Holder concentration is heavy across the top wallets.");
-  } else if (top10HolderPercent !== null && top10HolderPercent > 30) {
-    score -= 9;
-    reasons.push("Top-wallet concentration is worth tracking closely.");
+  if (top10HolderPercent !== null && top10HolderPercent > 70) {
+    penalties.push("Top 10 holders above 70%");
+    reasons.push("Top-wallet concentration is extremely heavy.");
   }
 
-  if (contractOwnedSupplyPercent !== null && contractOwnedSupplyPercent > 20) {
-    score -= 12;
-    reasons.push("Contract-controlled supply is elevated.");
+  if (
+    volumeLiquidityRatio >= 0.5 &&
+    sellShare !== null &&
+    sellShare > 0.6
+  ) {
+    penalties.push("High volume with sell-heavy flow");
+    reasons.push("Most of the active flow is leaning to sells.");
   }
 
-  if (migrationLikely) {
-    score -= 4;
-    reasons.push("Migration flows add operational uncertainty until verified.");
+  if (
+    [priceChangeM5, priceChangeH1, priceChangeH6]
+      .filter((value): value is number => typeof value === "number")
+      .some((value) => value <= -30)
+  ) {
+    penalties.push("Short timeframe drop above 30%");
+    reasons.push("A sharp short-window drop raises momentum and exit risk.");
   }
 
-  if (launchConfidence === "unknown") {
-    score -= 6;
-    reasons.push("Launch path could not be verified cleanly.");
+  let score =
+    breakdown.liquidity +
+    breakdown.marketCap +
+    breakdown.holders +
+    breakdown.activity +
+    breakdown.pressure +
+    breakdown.volatility +
+    breakdown.pool +
+    breakdown.security;
+
+  score -= penalties.reduce((sum, penalty) => {
+    switch (penalty) {
+      case "Liquidity below $30K":
+        return sum + 10;
+      case "Market cap below $1M":
+        return sum + 5;
+      case "Top holder above 15%":
+        return sum + 10;
+      case "Top 10 holders above 70%":
+        return sum + 10;
+      case "High volume with sell-heavy flow":
+        return sum + 5;
+      case "Short timeframe drop above 30%":
+        return sum + 5;
+      default:
+        return sum;
+    }
+  }, 0);
+
+  const upperSymbol = symbol.toUpperCase();
+
+  if (STABLECOINS.has(upperSymbol)) {
+    score = Math.max(score, 90);
   }
 
-  const finalScore = Math.min(99, Math.max(0, Math.round(score)));
-  const verdict =
-    finalScore >= 75
-      ? "Lower Risk"
-      : finalScore >= 45
-        ? "Moderate Risk"
-        : "High Risk";
+  if (
+    marketCapUsd !== null &&
+    marketCapUsd > 1_000_000_000 &&
+    liquidityUsd > 1_000_000 &&
+    topHolderPercent !== null &&
+    topHolderPercent < 5
+  ) {
+    score = Math.max(score, 85);
+  }
+
+  if (topHolderPercent !== null && topHolderPercent > 25) {
+    score = Math.min(score, 50);
+  }
+
+  if (liquidityUsd < 20_000) {
+    score = Math.min(score, 45);
+  }
+
+  if (top10HolderPercent !== null && top10HolderPercent > 80) {
+    score = Math.min(score, 55);
+  }
+
+  const finalScore = clamp(Math.round(score), 0, 100);
+  const riskLevel = STABLECOINS.has(upperSymbol)
+    ? "Low Risk"
+    : getRiskLevel(finalScore);
+
+  if (reasons.length === 0) {
+    if (riskLevel === "Low Risk") {
+      reasons.push("Liquidity, maturity, and market structure all look comparatively strong.");
+    } else if (riskLevel === "Moderate") {
+      reasons.push("The setup looks tradable, but a few metrics still need monitoring.");
+    } else if (riskLevel === "Risky") {
+      reasons.push("Several market structure signals still need caution.");
+    } else {
+      reasons.push("The current mix of liquidity, concentration, and activity is high risk.");
+    }
+  }
 
   return {
     score: finalScore,
-    verdict,
+    riskLevel,
+    breakdown,
+    penalties,
     reasons
   };
 }
