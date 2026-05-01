@@ -12,19 +12,40 @@ export interface DexscreenerPair {
   labels?: string[];
   pairCreatedAt?: number;
   fdv?: number;
+  marketCap?: number;
   priceUsd?: string;
   baseToken?: DexscreenerTokenRef;
   quoteToken?: DexscreenerTokenRef;
   liquidity?: {
     usd?: number;
+    base?: number;
+    quote?: number;
   };
   volume?: {
+    m5?: number;
+    h1?: number;
+    h6?: number;
     h24?: number;
   };
   priceChange?: {
+    m5?: number;
+    h1?: number;
+    h6?: number;
     h24?: number;
   };
   txns?: {
+    m5?: {
+      buys?: number;
+      sells?: number;
+    };
+    h1?: {
+      buys?: number;
+      sells?: number;
+    };
+    h6?: {
+      buys?: number;
+      sells?: number;
+    };
     h24?: {
       buys?: number;
       sells?: number;
@@ -59,9 +80,14 @@ async function fetchDexscreener(path: string) {
 
 export function sortPairsByLiquidity(pairs: DexscreenerPair[]) {
   return [...pairs].sort((first, second) => {
-    return (
-      getNumber(second.liquidity?.usd) - getNumber(first.liquidity?.usd)
-    );
+    const liquidityDelta =
+      getNumber(second.liquidity?.usd) - getNumber(first.liquidity?.usd);
+
+    if (liquidityDelta !== 0) {
+      return liquidityDelta;
+    }
+
+    return getNumber(second.volume?.h24) - getNumber(first.volume?.h24);
   });
 }
 

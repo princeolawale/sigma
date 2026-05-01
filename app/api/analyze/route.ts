@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { detectBestPair, type DexscreenerPair } from "@/lib/dexscreener";
-import { searchPools } from "@/lib/geckoterminal";
 import { detectLaunch } from "@/lib/launchDetection";
 import { calculateRiskScore } from "@/lib/riskScore";
 import {
@@ -62,57 +61,27 @@ function mapMoralisChain(chain: string | null | undefined) {
   }
 }
 
-function buildFallbackPairFromGecko(
-  query: string,
-  pool: Awaited<ReturnType<typeof searchPools>>[number] | undefined
+function buildChainLiquidityBreakdown(
+  selectedPair: DexscreenerPair,
+  pairs: DexscreenerPair[]
 ) {
-  if (!pool) {
-    return null;
-  }
+  const matchingChainPairs = pairs.filter((pair) => {
+    return pair.chainId === selectedPair.chainId;
+  });
+
+  const selectedChainPairs =
+    matchingChainPairs.length > 0 ? matchingChainPairs : [selectedPair];
 
   return {
-    chainId: pool.id.split("_")[0] ?? "unknown",
-    dexId: pool.relationships?.dex?.data?.id ?? "geckoterminal",
-    pairAddress: pool.attributes?.address ?? pool.id,
-    baseToken: {
-      address: query,
-      symbol: "Unknown",
-      name: "Unknown"
-    },
-    quoteToken: {
-      symbol: "Unknown"
-    },
-    liquidity: {
-      usd: Number(pool.attributes?.reserve_in_usd ?? 0)
-    },
-    volume: {
-      h24: Number(pool.attributes?.volume_usd?.h24 ?? 0)
-    },
-    priceUsd: pool.attributes?.base_token_price_usd ?? undefined,
-    txns: {
-      h24: {
-        buys: undefined,
-        sells: undefined
-      }
-    },
-    priceChange: {
-      h24: Number(pool.attributes?.price_change_percentage?.h24 ?? 0)
-    },
-    pairCreatedAt: pool.attributes?.pool_created_at
-      ? Date.parse(pool.attributes.pool_created_at)
-      : undefined
-  } satisfies DexscreenerPair;
-}
-
-function percentFromRaw(rawValue: string | null, rawTotal: string | null) {
-  const value = Number(rawValue ?? 0);
-  const total = Number(rawTotal ?? 0);
-
-  if (!Number.isFinite(value) || !Number.isFinite(total) || total <= 0) {
-    return null;
-  }
-
-  return Number(((value / total) * 100).toFixed(2));
+    chainId: selectedPair.chainId ?? "unknown",
+    totalLiquidityUsd: Number(
+      selectedChainPairs
+        .reduce((sum, pair) => sum + getNumber(pair.liquidity?.usd), 0)
+        .toFixed(2)
+    ),
+    topDexName: formatDexName(selectedChainPairs[0]?.dexId),
+    topPairAddress: selectedChainPairs[0]?.pairAddress ?? "Unavailable"
+  };
 }
 
 function buildAnalystReport(input: {
@@ -174,12 +143,7 @@ export async function POST(request: NextRequest) {
       pairs: [],
       source: "token" as const
     }));
-
-    const geckoPools =
-      dexResult.pair === null ? await searchPools(address).catch(() => []) : [];
-
-    const pair =
-      dexResult.pair ?? buildFallbackPairFromGecko(address, geckoPools[0]);
+    const pair = dexResult.pair;
 
     if (!pair) {
       return NextResponse.json(
@@ -208,10 +172,20 @@ export async function POST(request: NextRequest) {
     const volume24h = getNumber(pair.volume?.h24);
     const priceChange24h = getNumber(pair.priceChange?.h24);
     const priceUsd = Number(pair.priceUsd ?? 0);
+    const marketCapUsd =
+      getNumber(pair.marketCap) > 0
+        ? getNumber(pair.marketCap)
+        : getNumber(pair.fdv) > 0
+          ? getNumber(pair.fdv)
+          : null;
     const poolAgeHours = poolAgeHoursFromTimestamp(pair.pairCreatedAt ?? null);
     const dexName = formatDexName(pair.dexId);
     const buys24h = pair.txns?.h24?.buys ?? null;
     const sells24h = pair.txns?.h24?.sells ?? null;
+    const chainLiquidity = buildChainLiquidityBreakdown(
+      pair,
+      dexResult.pairs.length > 0 ? dexResult.pairs : [pair]
+    );
 
     let holderDistribution: HolderDistribution | null = null;
     let holderDataAvailable = false;
@@ -272,14 +246,6 @@ export async function POST(request: NextRequest) {
       launchConfidence: launch.confidence
     });
 
-    const marketCapUsd =
-      holderDistribution?.supply !== null &&
-      holderDistribution?.supply !== undefined &&
-      Number.isFinite(priceUsd) &&
-      priceUsd > 0
-        ? Number((holderDistribution.supply * priceUsd).toFixed(2))
-        : null;
-
     const report = buildAnalystReport({
       symbol: pair.baseToken?.symbol ?? "Unknown",
       liquidityUsd,
@@ -306,7 +272,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       data: {
         token: {
-          address,
+          address: pair.baseToken?.address ?? address,
           symbol: pair.baseToken?.symbol ?? "Unknown",
           name: pair.baseToken?.name ?? "Unknown",
           chain: pair.chainId ?? "unknown"
@@ -326,11 +292,28 @@ export async function POST(request: NextRequest) {
           priceUsd: Number.isFinite(priceUsd) && priceUsd > 0 ? priceUsd : null,
           marketCapUsd,
           liquidityUsd,
+          liquidityBase: getNumber(pair.liquidity?.base),
+          liquidityQuote: getNumber(pair.liquidity?.quote),
+          chainLiquidityUsd: chainLiquidity.totalLiquidityUsd,
+          chainTopDexName: chainLiquidity.topDexName,
+          chainTopPairAddress: chainLiquidity.topPairAddress,
           volume24h,
+          volumeM5: getNumber(pair.volume?.m5),
+          volumeH1: getNumber(pair.volume?.h1),
+          volumeH6: getNumber(pair.volume?.h6),
           priceChange24h,
+          priceChangeM5: getNumber(pair.priceChange?.m5),
+          priceChangeH1: getNumber(pair.priceChange?.h1),
+          priceChangeH6: getNumber(pair.priceChange?.h6),
           poolAgeHours
         },
         activityAnalysis: {
+          buysM5: pair.txns?.m5?.buys ?? null,
+          sellsM5: pair.txns?.m5?.sells ?? null,
+          buysH1: pair.txns?.h1?.buys ?? null,
+          sellsH1: pair.txns?.h1?.sells ?? null,
+          buysH6: pair.txns?.h6?.buys ?? null,
+          sellsH6: pair.txns?.h6?.sells ?? null,
           buys24h,
           sells24h,
           summary:

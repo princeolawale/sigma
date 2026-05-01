@@ -24,11 +24,28 @@ export interface TokenAnalysisResult {
     priceUsd: number | null;
     marketCapUsd: number | null;
     liquidityUsd: number;
+    liquidityBase: number;
+    liquidityQuote: number;
+    chainLiquidityUsd: number;
+    chainTopDexName: string;
+    chainTopPairAddress: string;
     volume24h: number;
+    volumeM5: number;
+    volumeH1: number;
+    volumeH6: number;
     priceChange24h: number;
+    priceChangeM5: number;
+    priceChangeH1: number;
+    priceChangeH6: number;
     poolAgeHours: number | null;
   };
   activityAnalysis: {
+    buysM5: number | null;
+    sellsM5: number | null;
+    buysH1: number | null;
+    sellsH1: number | null;
+    buysH6: number | null;
+    sellsH6: number | null;
     buys24h: number | null;
     sells24h: number | null;
     summary: string;
@@ -653,6 +670,9 @@ export default function ResultCard({ result }: ResultCardProps) {
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/50">
               Sigma Analysis
             </p>
+            <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-teal">
+              Market data: Dexscreener
+            </p>
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
               {result.token.symbol}
             </h2>
@@ -730,6 +750,22 @@ export default function ResultCard({ result }: ResultCardProps) {
           ))}
           <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
             <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              Chain Liquidity
+            </p>
+            <p className="mt-2 text-base font-semibold text-white sm:text-lg">
+              {formatCurrency(result.liquidityBreakdown.chainLiquidityUsd)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              Chain Top DEX
+            </p>
+            <p className="mt-2 text-base font-semibold text-white sm:text-lg">
+              {result.liquidityBreakdown.chainTopDexName}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
               Pair
             </p>
             <div className="mt-2 flex max-w-full items-center justify-center gap-2 sm:justify-start">
@@ -744,11 +780,23 @@ export default function ResultCard({ result }: ResultCardProps) {
               />
             </div>
           </div>
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              Liquidity Base / Quote
+            </p>
+            <p className="result-wrap mt-2 text-base font-semibold text-white sm:text-lg">
+              {formatNumber(result.liquidityBreakdown.liquidityBase)} /{" "}
+              {formatNumber(result.liquidityBreakdown.liquidityQuote)}
+            </p>
+          </div>
         </div>
       </Section>
 
       {result.holderDistribution ? (
         <Section title="Holder Distribution">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.16em] text-teal">
+            Holder data: Moralis
+          </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
               <p className="text-xs uppercase tracking-[0.14em] text-white/50">
@@ -819,6 +867,32 @@ export default function ResultCard({ result }: ResultCardProps) {
               </p>
             </div>
           ))}
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              M5 Buys / Sells
+            </p>
+            <p className="mt-2 text-base font-semibold text-white sm:text-lg">
+              {result.activityAnalysis.buysM5 ?? "—"} / {result.activityAnalysis.sellsM5 ?? "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              H1 Buys / Sells
+            </p>
+            <p className="mt-2 text-base font-semibold text-white sm:text-lg">
+              {result.activityAnalysis.buysH1 ?? "—"} / {result.activityAnalysis.sellsH1 ?? "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              H6 Buys / Sells
+            </p>
+            <p className="mt-2 text-base font-semibold text-white sm:text-lg">
+              {result.activityAnalysis.buysH6 ?? "—"} / {result.activityAnalysis.sellsH6 ?? "—"}
+            </p>
+          </div>
         </div>
         <p className="mt-4 text-sm leading-6 text-white/70">
           {result.activityAnalysis.summary}
