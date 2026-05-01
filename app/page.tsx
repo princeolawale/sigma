@@ -47,34 +47,6 @@ const steps = [
   }
 ];
 
-const productIntelligence = [
-  {
-    title: "Market Intelligence",
-    text: "Track price, liquidity, volume, and market cap in one clean market snapshot.",
-    badge: "New"
-  },
-  {
-    title: "Holder Distribution",
-    text: "See holder count, top holder share, and top ten concentration with Moralis-backed data.",
-    badge: "New"
-  },
-  {
-    title: "Launch Insight",
-    text: "Spot recent pools, standard DEX activity, and limited launch inference without fake precision.",
-    badge: "New"
-  },
-  {
-    title: "Risk Signals",
-    text: "Read liquidity strength, volatility, price movement, and activity warnings at a glance.",
-    badge: "New"
-  },
-  {
-    title: "AI Verdict",
-    text: "Get a trader-style summary that turns live token data into a final risk readout.",
-    badge: "New"
-  }
-];
-
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col overflow-hidden">
@@ -97,43 +69,6 @@ export default function Home() {
         >
           Launch App
         </Link>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-5 pb-6 sm:px-8 sm:pb-10">
-        <div className="rounded-[1.75rem] border border-primary/15 bg-white/[0.03] p-5 shadow-glow sm:p-7">
-          <div className="max-w-2xl">
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-teal">
-              Product Intelligence
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">
-              New in Sigma
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base">
-              Built to feel more like a trading terminal: faster signal
-              hierarchy, stronger market context, and cleaner risk reads.
-            </p>
-          </div>
-          <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {productIntelligence.map((feature) => (
-              <article
-                key={feature.title}
-                className="rounded-3xl border border-primary/15 bg-[#08111a] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-base font-semibold text-white">
-                    {feature.title}
-                  </h3>
-                  <span className="rounded-full border border-teal/25 bg-teal/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-teal">
-                    {feature.badge}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-white/65">
-                  {feature.text}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
       </section>
 
       <section id="why-choose-us" className="border-y border-primary/10 bg-white/[0.02]">

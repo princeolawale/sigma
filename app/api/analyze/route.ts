@@ -117,8 +117,10 @@ function percentFromRaw(rawValue: string | null, rawTotal: string | null) {
 
 function buildAnalystReport(input: {
   symbol: string;
-  launchSummary: string;
   liquidityUsd: number;
+  marketCapUsd: number | null;
+  volume24h: number;
+  priceChange24h: number;
   dexName: string;
   riskVerdict: string;
   riskReasons: string[];
@@ -126,7 +128,9 @@ function buildAnalystReport(input: {
 }) {
   const whatHappened = `${input.symbol} is currently trading primarily on ${input.dexName} with about $${Math.round(
     input.liquidityUsd
-  ).toLocaleString()} of visible liquidity. ${input.launchSummary}`;
+  ).toLocaleString()} of visible liquidity, ${Math.round(
+    input.volume24h
+  ).toLocaleString()} in 24h volume, and a ${input.priceChange24h >= 0 ? "+" : ""}${input.priceChange24h.toFixed(2)}% move over the last day.${input.marketCapUsd !== null ? ` Estimated market cap sits near $${Math.round(input.marketCapUsd).toLocaleString()}.` : ""}`;
 
   const whyItMatters = input.marketRiskSummary;
 
@@ -136,8 +140,13 @@ function buildAnalystReport(input: {
     "Enable explorer-backed checks later for deployer, holder, and LP custody verification."
   ];
 
+  const preferredReason =
+    input.riskReasons.find((reason) => {
+      return !reason.toLowerCase().includes("launch path");
+    }) ?? input.riskReasons[0];
+
   const finalVerdict = input.riskReasons.length
-    ? `${input.riskVerdict}: ${input.riskReasons[0]}`
+    ? `${input.riskVerdict}: ${preferredReason}`
     : `${input.riskVerdict}: Current public data does not show a single dominant red flag, but further wallet-level verification is still recommended.`;
 
   return {
@@ -262,10 +271,20 @@ export async function POST(request: NextRequest) {
       launchConfidence: launch.confidence
     });
 
+    const marketCapUsd =
+      holderDistribution?.supply !== null &&
+      holderDistribution?.supply !== undefined &&
+      Number.isFinite(priceUsd) &&
+      priceUsd > 0
+        ? Number((holderDistribution.supply * priceUsd).toFixed(2))
+        : null;
+
     const report = buildAnalystReport({
       symbol: pair.baseToken?.symbol ?? "Unknown",
-      launchSummary: launch.summary,
       liquidityUsd,
+      marketCapUsd,
+      volume24h,
+      priceChange24h,
       dexName,
       riskVerdict: risk.verdict,
       riskReasons: risk.reasons,
@@ -276,13 +295,6 @@ export async function POST(request: NextRequest) {
     });
 
     const dataAvailability: string[] = [];
-    const marketCapUsd =
-      holderDistribution?.supply !== null &&
-      holderDistribution?.supply !== undefined &&
-      Number.isFinite(priceUsd) &&
-      priceUsd > 0
-        ? Number((holderDistribution.supply * priceUsd).toFixed(2))
-        : null;
 
     if (!holderDataAvailable) {
       dataAvailability.push(

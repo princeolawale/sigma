@@ -195,6 +195,21 @@ function getLaunchText(result: TokenAnalysisResult) {
   return "Launch type cannot be verified from market data alone.";
 }
 
+function buildRiskNarrative(result: TokenAnalysisResult) {
+  const lines = [
+    `Liquidity currently sits at ${formatCurrency(result.liquidityBreakdown.liquidityUsd)}, while 24h volume is ${formatCurrency(result.liquidityBreakdown.volume24h)}.`,
+    `Price action over the last 24 hours is ${formatPercent(result.liquidityBreakdown.priceChange24h)}.${result.liquidityBreakdown.marketCapUsd !== null ? ` Estimated market cap is ${formatCompactCurrency(result.liquidityBreakdown.marketCapUsd)}.` : " Market cap is currently unavailable."}`
+  ];
+
+  if (result.holderDistribution) {
+    lines.push(
+      `Holder concentration remains important: the top wallet controls ${result.holderDistribution.topHolderPercent}% of supply, and the top ten wallets control ${result.holderDistribution.top10Percent}%.`
+    );
+  }
+
+  return lines;
+}
+
 function Section({
   title,
   children
@@ -221,6 +236,7 @@ export default function ResultCard({ result }: ResultCardProps) {
     result.activityAnalysis.sells24h,
     result.activityAnalysis.buys24h
   );
+  const riskNarrative = buildRiskNarrative(result);
   const marketOverview = [
     {
       label: "Token",
@@ -375,48 +391,6 @@ export default function ResultCard({ result }: ResultCardProps) {
         </div>
       </Section>
 
-      <Section title="Activity Analysis">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {riskSignals.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4"
-            >
-              <p className="text-xs uppercase tracking-[0.14em] text-white/50">
-                {item.label}
-              </p>
-              <p
-                className={`result-wrap mt-2 text-base font-semibold sm:text-lg ${
-                  item.valueClass ?? "text-white"
-                }`}
-              >
-                {item.value}
-              </p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 text-sm leading-6 text-white/70">
-          {result.activityAnalysis.summary}
-        </p>
-      </Section>
-
-      <Section title="Launch Insight">
-        <p className="text-sm leading-6 text-white/88 sm:text-base sm:leading-7">
-          {getLaunchText(result)}
-        </p>
-      </Section>
-
-      <Section title="Risk Signals">
-        <div className="space-y-3">
-          <p className="text-sm leading-6 text-white/88 sm:text-base sm:leading-7">
-            {result.analystReport.whatHappened}
-          </p>
-          <p className="text-sm leading-6 text-white/70 sm:text-base sm:leading-7">
-            {result.analystReport.whyItMatters}
-          </p>
-        </div>
-      </Section>
-
       {result.holderDistribution ? (
         <Section title="Holder Distribution">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -457,6 +431,47 @@ export default function ResultCard({ result }: ResultCardProps) {
           </div>
         </Section>
       ) : null}
+
+      <Section title="Activity Analysis">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {riskSignals.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4"
+            >
+              <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+                {item.label}
+              </p>
+              <p
+                className={`result-wrap mt-2 text-base font-semibold sm:text-lg ${
+                  item.valueClass ?? "text-white"
+                }`}
+              >
+                {item.value}
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-sm leading-6 text-white/70">
+          {result.activityAnalysis.summary}
+        </p>
+      </Section>
+
+      <Section title="Risk Signals">
+        <div className="space-y-3">
+          {riskNarrative.map((line) => (
+            <p
+              key={line}
+              className="text-sm leading-6 text-white/78 sm:text-base sm:leading-7"
+            >
+              {line}
+            </p>
+          ))}
+          <p className="text-sm leading-6 text-white/65 sm:text-base sm:leading-7">
+            {result.analystReport.whyItMatters}
+          </p>
+        </div>
+      </Section>
 
       <Section title="Final Verdict">
         <div className="space-y-4">
