@@ -656,8 +656,8 @@ export default function ResultCard({ result }: ResultCardProps) {
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
               {result.token.symbol}
             </h2>
-            <div className="mt-2 flex max-w-full items-center gap-2">
-              <p className="result-wrap min-w-0 text-sm text-white/60">
+            <div className="mt-2 flex max-w-full items-center justify-center gap-2 sm:justify-start">
+              <p className="result-wrap min-w-0 text-center text-sm text-white/60 sm:text-left">
                 {formatAddress(result.token.address)}
               </p>
               <CopyButton
@@ -732,8 +732,8 @@ export default function ResultCard({ result }: ResultCardProps) {
             <p className="text-xs uppercase tracking-[0.14em] text-white/50">
               Pair
             </p>
-            <div className="mt-2 flex max-w-full items-center gap-2">
-              <p className="result-wrap min-w-0 text-base font-semibold text-white sm:text-lg">
+            <div className="mt-2 flex max-w-full items-center justify-center gap-2 sm:justify-start">
+              <p className="result-wrap min-w-0 text-center text-base font-semibold text-white sm:text-left sm:text-lg">
                 {formatAddress(result.liquidityBreakdown.pairAddress)}
               </p>
               <CopyButton
