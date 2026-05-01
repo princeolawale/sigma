@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
 export interface TokenAnalysisResult {
   token: {
     address: string;
@@ -49,6 +53,15 @@ export interface TokenAnalysisResult {
 
 interface ResultCardProps {
   result: TokenAnalysisResult;
+}
+
+type SignalTone = "positive" | "warning" | "danger" | "neutral";
+
+interface SignalItem {
+  key: string;
+  tone: SignalTone;
+  title: string;
+  text: string;
 }
 
 const RISK_DISCLAIMER =
@@ -119,6 +132,10 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
+function pickVariant(variants: string[], seed: number) {
+  return variants[Math.abs(seed) % variants.length] ?? variants[0];
+}
+
 function getRiskTone(score: number) {
   if (score >= 75) {
     return {
@@ -152,6 +169,10 @@ function getLiquidityTone(liquidityUsd: number) {
   }
 
   if (liquidityUsd >= 50000) {
+    return "text-warning";
+  }
+
+  if (liquidityUsd >= 15000) {
     return "text-teal";
   }
 
@@ -174,40 +195,331 @@ function getActivityTone(buys: number | null, sells: number | null) {
   return "text-white";
 }
 
-function getLaunchText(result: TokenAnalysisResult) {
-  const age = result.liquidityBreakdown.poolAgeHours;
-  const stronglyInferred =
-    result.launchIntelligence.confidence !== "unknown" &&
-    result.launchIntelligence.launchType !== "unknown launch type";
-
-  if (stronglyInferred) {
-    return result.launchIntelligence.summary;
+function getHolderTone(value: number, warningThreshold: number, dangerThreshold: number) {
+  if (value > dangerThreshold) {
+    return "text-danger";
   }
 
-  if (age !== null && age < 72) {
-    return "Recent pool detected.";
+  if (value > warningThreshold) {
+    return "text-warning";
   }
 
-  if (age !== null) {
-    return "Standard DEX trading detected.";
-  }
-
-  return "Launch type cannot be verified from market data alone.";
+  return "text-acid";
 }
 
-function buildRiskNarrative(result: TokenAnalysisResult) {
-  const lines = [
-    `Liquidity currently sits at ${formatCurrency(result.liquidityBreakdown.liquidityUsd)}, while 24h volume is ${formatCurrency(result.liquidityBreakdown.volume24h)}.`,
-    `Price action over the last 24 hours is ${formatPercent(result.liquidityBreakdown.priceChange24h)}.${result.liquidityBreakdown.marketCapUsd !== null ? ` Estimated market cap is ${formatCompactCurrency(result.liquidityBreakdown.marketCapUsd)}.` : " Market cap is currently unavailable."}`
-  ];
+function toneClasses(tone: SignalTone) {
+  switch (tone) {
+    case "positive":
+      return {
+        border: "border-acid/20",
+        text: "text-acid",
+        bg: "bg-acid/8"
+      };
+    case "warning":
+      return {
+        border: "border-warning/20",
+        text: "text-warning",
+        bg: "bg-warning/8"
+      };
+    case "danger":
+      return {
+        border: "border-danger/20",
+        text: "text-danger",
+        bg: "bg-danger/8"
+      };
+    default:
+      return {
+        border: "border-primary/15",
+        text: "text-teal",
+        bg: "bg-white/[0.02]"
+      };
+  }
+}
 
-  if (result.holderDistribution) {
-    lines.push(
-      `Holder concentration remains important: the top wallet controls ${result.holderDistribution.topHolderPercent}% of supply, and the top ten wallets control ${result.holderDistribution.top10Percent}%.`
-    );
+function buildRiskSignals(result: TokenAnalysisResult): SignalItem[] {
+  const signals: SignalItem[] = [];
+  const { liquidityUsd, volume24h, priceChange24h, marketCapUsd } =
+    result.liquidityBreakdown;
+  const holderDistribution = result.holderDistribution;
+  const absoluteMove = Math.abs(priceChange24h);
+  const buyCount = result.activityAnalysis.buys24h;
+  const sellCount = result.activityAnalysis.sells24h;
+
+  const liquidityVariants = {
+    strong: [
+      "Deep enough liquidity to absorb more normal trading flow.",
+      "Liquidity looks healthy for active market participation.",
+      "Pool depth is sturdier than the typical thin launch pool.",
+      "Liquidity is giving this market decent execution room."
+    ],
+    moderate: [
+      "Liquidity is usable, but larger orders can still move price.",
+      "Pool depth is workable, though slippage can show up fast.",
+      "Liquidity sits in the middle range and needs position sizing discipline.",
+      "There is enough depth to trade, but it is not especially thick."
+    ],
+    weak: [
+      "Thin liquidity can turn even modest selling into a sharp move.",
+      "Pool depth is light, so exits may get messy under pressure.",
+      "Liquidity is fragile here and slippage risk is elevated.",
+      "This market still looks thin enough for fast air pockets."
+    ]
+  };
+
+  if (liquidityUsd >= 250000) {
+    signals.push({
+      key: "liquidity",
+      tone: "positive",
+      title: "Liquidity",
+      text: pickVariant(liquidityVariants.strong, Math.round(liquidityUsd))
+    });
+  } else if (liquidityUsd >= 15000) {
+    signals.push({
+      key: "liquidity",
+      tone: liquidityUsd >= 50000 ? "warning" : "neutral",
+      title: "Liquidity",
+      text: pickVariant(liquidityVariants.moderate, Math.round(liquidityUsd / 1000))
+    });
+  } else {
+    signals.push({
+      key: "liquidity",
+      tone: "danger",
+      title: "Liquidity",
+      text: pickVariant(liquidityVariants.weak, Math.round(liquidityUsd / 100))
+    });
   }
 
-  return lines;
+  const activityVariants = {
+    active: [
+      "Trading flow is live enough for cleaner price discovery.",
+      "Volume is supporting a more active market tape.",
+      "The pair is seeing enough turnover to keep price discovery moving.",
+      "Activity is healthy enough that the market is not completely dormant."
+    ],
+    moderate: [
+      "Volume is present, but the tape still needs watching.",
+      "There is some turnover here, though the market is not especially busy.",
+      "Activity is real but not yet strong enough to call robust.",
+      "Volume is middling, so conviction is still developing."
+    ],
+    weak: [
+      "Light activity can make price action easier to distort.",
+      "Low turnover leaves this pair more vulnerable to chop and spoofy moves.",
+      "Volume is still thin, so signals can be less trustworthy.",
+      "The tape is quiet enough that one-sided flow can move it fast."
+    ]
+  };
+
+  if (volume24h >= 100000) {
+    signals.push({
+      key: "volume",
+      tone: "positive",
+      title: "Volume",
+      text: pickVariant(activityVariants.active, Math.round(volume24h / 1000))
+    });
+  } else if (volume24h >= 10000) {
+    signals.push({
+      key: "volume",
+      tone: "neutral",
+      title: "Volume",
+      text: pickVariant(activityVariants.moderate, Math.round(volume24h / 1000))
+    });
+  } else {
+    signals.push({
+      key: "volume",
+      tone: "warning",
+      title: "Volume",
+      text: pickVariant(activityVariants.weak, Math.round(volume24h))
+    });
+  }
+
+  const volatilityVariants = {
+    calm: [
+      "Price movement is active but still inside a more manageable range.",
+      "The recent move is noticeable without looking extreme.",
+      "Volatility is present, but it has not blown out yet."
+    ],
+    hot: [
+      "Price is moving fast enough that entries and exits need tighter discipline.",
+      "Momentum is elevated here, so chase risk is real.",
+      "This tape is getting hot and can snap back quickly.",
+      "Volatility is running hotter than a steady market likes."
+    ],
+    severe: [
+      "This is high-volatility price action and can reverse hard.",
+      "The tape is stretched enough to make execution risk meaningful.",
+      "Extreme movement is in play here, so size matters a lot.",
+      "This is a sharp move environment, not a sleepy one."
+    ]
+  };
+
+  if (absoluteMove >= 60) {
+    signals.push({
+      key: "volatility",
+      tone: "danger",
+      title: "Volatility",
+      text: pickVariant(volatilityVariants.severe, Math.round(absoluteMove))
+    });
+  } else if (absoluteMove >= 20) {
+    signals.push({
+      key: "volatility",
+      tone: "warning",
+      title: "Volatility",
+      text: pickVariant(volatilityVariants.hot, Math.round(absoluteMove))
+    });
+  } else {
+    signals.push({
+      key: "volatility",
+      tone: "neutral",
+      title: "Volatility",
+      text: pickVariant(volatilityVariants.calm, Math.round(absoluteMove))
+    });
+  }
+
+  if (buyCount !== null && sellCount !== null) {
+    const activitySkew = buyCount - sellCount;
+    if (activitySkew > 0) {
+      signals.push({
+        key: "flow",
+        tone: "positive",
+        title: "Order Flow",
+        text: pickVariant(
+          [
+            "Buy pressure is ahead of sells right now.",
+            "The tape is leaning more bid than offered.",
+            "Recent flow has more buyers than sellers.",
+            "Buying activity is outpacing selling for now."
+          ],
+          activitySkew
+        )
+      });
+    } else if (activitySkew < 0) {
+      signals.push({
+        key: "flow",
+        tone: "danger",
+        title: "Order Flow",
+        text: pickVariant(
+          [
+            "Sell pressure is leading the tape at the moment.",
+            "Sellers are doing more of the work right now.",
+            "Recent flow is heavier on the sell side.",
+            "The pair is leaning offered rather than bid."
+          ],
+          Math.abs(activitySkew)
+        )
+      });
+    } else {
+      signals.push({
+        key: "flow",
+        tone: "neutral",
+        title: "Order Flow",
+        text: "Buy and sell counts are relatively balanced."
+      });
+    }
+  }
+
+  signals.push({
+    key: "market-cap",
+    tone: marketCapUsd === null ? "neutral" : marketCapUsd >= 50000000 ? "positive" : "neutral",
+    title: "Market Cap",
+    text:
+      marketCapUsd === null
+        ? "Market cap is unavailable from current price and supply inputs."
+        : `Estimated market cap is ${formatCompactCurrency(marketCapUsd)}.`
+  });
+
+  if (holderDistribution) {
+    const { topHolderPercent, top10Percent } = holderDistribution;
+
+    if (topHolderPercent > 10) {
+      signals.push({
+        key: "top-holder-high",
+        tone: "danger",
+        title: "Top Holder Risk",
+        text: `High risk: one wallet controls ${topHolderPercent}% of supply. A wallet holding more than 5% can be a dump risk. Confirm whether this wallet is locked, a team wallet, LP/contract wallet, or exchange wallet.`
+      });
+    } else if (topHolderPercent > 5) {
+      signals.push({
+        key: "top-holder-warning",
+        tone: "warning",
+        title: "Top Holder Risk",
+        text: `One wallet controls ${topHolderPercent}% of supply. A wallet holding more than 5% can be a dump risk. Confirm whether this wallet is locked, a team wallet, LP/contract wallet, or exchange wallet.`
+      });
+    }
+
+    if (top10Percent > 50) {
+      signals.push({
+        key: "top10-high",
+        tone: "danger",
+        title: "Holder Concentration",
+        text: pickVariant(
+          [
+            `High concentration: the top ten wallets hold ${top10Percent}% of supply.`,
+            `Top-ten concentration is heavy at ${top10Percent}% of supply.`,
+            `The top ten wallets control ${top10Percent}% here, which is a real concentration risk.`
+          ],
+          Math.round(top10Percent)
+        )
+      });
+    } else if (top10Percent > 30) {
+      signals.push({
+        key: "top10-warning",
+        tone: "warning",
+        title: "Holder Concentration",
+        text: pickVariant(
+          [
+            `The top ten wallets hold ${top10Percent}% of supply, so concentration deserves monitoring.`,
+            `Top-ten ownership is notable at ${top10Percent}% of supply.`,
+            `Concentration is building: the top ten wallets control ${top10Percent}%.`
+          ],
+          Math.round(top10Percent)
+        )
+      });
+    }
+  }
+
+  return signals;
+}
+
+function CopyButton({
+  label,
+  value,
+  copiedKey,
+  onCopy
+}: {
+  label: string;
+  value: string;
+  copiedKey: string | null;
+  onCopy: (key: string, value: string) => void;
+}) {
+  const isCopied = copiedKey === value;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onCopy(value, value)}
+      aria-label={`Copy ${label}`}
+      className="inline-flex h-8 items-center justify-center rounded-xl border border-primary/15 bg-white/[0.03] px-2.5 text-white/65 transition hover:border-teal/40 hover:text-teal focus:outline-none focus:ring-2 focus:ring-primary/40"
+    >
+      {isCopied ? (
+        <span className="text-xs font-medium text-teal">Copied</span>
+      ) : (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.8"
+        >
+          <rect x="9" y="9" width="10" height="10" rx="2" />
+          <path d="M5 15V7a2 2 0 0 1 2-2h8" />
+        </svg>
+      )}
+    </button>
+  );
 }
 
 function Section({
@@ -226,6 +538,20 @@ function Section({
 }
 
 export default function ResultCard({ result }: ResultCardProps) {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!copiedKey) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setCopiedKey(null);
+    }, 1400);
+
+    return () => window.clearTimeout(timeout);
+  }, [copiedKey]);
+
   const riskTone = getRiskTone(result.riskScore);
   const liquidityTone = getLiquidityTone(result.liquidityBreakdown.liquidityUsd);
   const buyTone = getActivityTone(
@@ -236,7 +562,17 @@ export default function ResultCard({ result }: ResultCardProps) {
     result.activityAnalysis.sells24h,
     result.activityAnalysis.buys24h
   );
-  const riskNarrative = buildRiskNarrative(result);
+  const signals = useMemo(() => buildRiskSignals(result), [result]);
+
+  async function handleCopy(key: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+    } catch {
+      setCopiedKey(null);
+    }
+  }
+
   const marketOverview = [
     {
       label: "Token",
@@ -275,14 +611,10 @@ export default function ResultCard({ result }: ResultCardProps) {
       label: "Liquidity",
       value: formatCurrency(result.liquidityBreakdown.liquidityUsd),
       valueClass: liquidityTone
-    },
-    {
-      label: "Pair",
-      value: formatAddress(result.liquidityBreakdown.pairAddress)
     }
   ];
 
-  const riskSignals = [
+  const activityMetrics = [
     {
       label: "24h Volume",
       value: formatCurrency(result.liquidityBreakdown.volume24h)
@@ -324,9 +656,17 @@ export default function ResultCard({ result }: ResultCardProps) {
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
               {result.token.symbol}
             </h2>
-            <p className="result-wrap mt-2 text-sm text-white/60">
-              {formatAddress(result.token.address)}
-            </p>
+            <div className="mt-2 flex max-w-full items-center gap-2">
+              <p className="result-wrap min-w-0 text-sm text-white/60">
+                {formatAddress(result.token.address)}
+              </p>
+              <CopyButton
+                label="token contract address"
+                value={result.token.address}
+                copiedKey={copiedKey}
+                onCopy={handleCopy}
+              />
+            </div>
           </div>
 
           <div
@@ -388,6 +728,22 @@ export default function ResultCard({ result }: ResultCardProps) {
               </p>
             </div>
           ))}
+          <div className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4">
+            <p className="text-xs uppercase tracking-[0.14em] text-white/50">
+              Pair
+            </p>
+            <div className="mt-2 flex max-w-full items-center gap-2">
+              <p className="result-wrap min-w-0 text-base font-semibold text-white sm:text-lg">
+                {formatAddress(result.liquidityBreakdown.pairAddress)}
+              </p>
+              <CopyButton
+                label="pair address"
+                value={result.liquidityBreakdown.pairAddress}
+                copiedKey={copiedKey}
+                onCopy={handleCopy}
+              />
+            </div>
+          </div>
         </div>
       </Section>
 
@@ -406,7 +762,13 @@ export default function ResultCard({ result }: ResultCardProps) {
               <p className="text-xs uppercase tracking-[0.14em] text-white/50">
                 Top Holder
               </p>
-              <p className="mt-2 text-base font-semibold text-warning sm:text-lg">
+              <p
+                className={`mt-2 text-base font-semibold sm:text-lg ${getHolderTone(
+                  result.holderDistribution.topHolderPercent,
+                  5,
+                  10
+                )}`}
+              >
                 {result.holderDistribution.topHolderPercent}%
               </p>
             </div>
@@ -414,7 +776,13 @@ export default function ResultCard({ result }: ResultCardProps) {
               <p className="text-xs uppercase tracking-[0.14em] text-white/50">
                 Top 10 Holders
               </p>
-              <p className="mt-2 text-base font-semibold text-warning sm:text-lg">
+              <p
+                className={`mt-2 text-base font-semibold sm:text-lg ${getHolderTone(
+                  result.holderDistribution.top10Percent,
+                  30,
+                  50
+                )}`}
+              >
                 {result.holderDistribution.top10Percent}%
               </p>
             </div>
@@ -434,7 +802,7 @@ export default function ResultCard({ result }: ResultCardProps) {
 
       <Section title="Activity Analysis">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {riskSignals.map((item) => (
+          {activityMetrics.map((item) => (
             <div
               key={item.label}
               className="rounded-2xl border border-primary/15 bg-ink/60 p-3 sm:p-4"
@@ -459,17 +827,23 @@ export default function ResultCard({ result }: ResultCardProps) {
 
       <Section title="Risk Signals">
         <div className="space-y-3">
-          {riskNarrative.map((line) => (
-            <p
-              key={line}
-              className="text-sm leading-6 text-white/78 sm:text-base sm:leading-7"
-            >
-              {line}
-            </p>
-          ))}
-          <p className="text-sm leading-6 text-white/65 sm:text-base sm:leading-7">
-            {result.analystReport.whyItMatters}
-          </p>
+          {signals.map((signal) => {
+            const tone = toneClasses(signal.tone);
+
+            return (
+              <div
+                key={signal.key}
+                className={`rounded-2xl border ${tone.border} ${tone.bg} p-3 sm:p-4`}
+              >
+                <p className={`text-sm font-semibold ${tone.text}`}>
+                  {signal.title}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-white/78 sm:text-base sm:leading-7">
+                  {signal.text}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </Section>
 

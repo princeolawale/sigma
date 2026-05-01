@@ -264,6 +264,7 @@ export async function POST(request: NextRequest) {
       volume24h,
       priceChange24h,
       lpSafetyStatus: "unknown",
+      topHolderPercent: holderDistribution?.topHolderPercent ?? null,
       deployerTokenPercent: null,
       top10HolderPercent: holderDistribution?.top10Percent ?? null,
       contractOwnedSupplyPercent: null,

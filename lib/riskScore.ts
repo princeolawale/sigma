@@ -3,6 +3,7 @@ export interface RiskScoreInput {
   volume24h: number;
   priceChange24h: number;
   lpSafetyStatus: string;
+  topHolderPercent: number | null;
   deployerTokenPercent: number | null;
   top10HolderPercent: number | null;
   contractOwnedSupplyPercent: number | null;
@@ -21,6 +22,7 @@ export function calculateRiskScore({
   volume24h,
   priceChange24h,
   lpSafetyStatus,
+  topHolderPercent,
   deployerTokenPercent,
   top10HolderPercent,
   contractOwnedSupplyPercent,
@@ -67,11 +69,20 @@ export function calculateRiskScore({
     reasons.push("Deployer retains a large token share.");
   }
 
-  if (top10HolderPercent !== null && top10HolderPercent > 70) {
+  if (topHolderPercent !== null && topHolderPercent > 10) {
+    score -= 14;
+    reasons.push("A single wallet controls too much supply.");
+  } else if (topHolderPercent !== null && topHolderPercent > 5) {
+    score -= 8;
+    reasons.push("One wallet holds enough supply to become a dump risk.");
+  }
+
+  if (top10HolderPercent !== null && top10HolderPercent > 50) {
     score -= 16;
     reasons.push("Holder concentration is heavy across the top wallets.");
-  } else if (top10HolderPercent !== null && top10HolderPercent > 50) {
+  } else if (top10HolderPercent !== null && top10HolderPercent > 30) {
     score -= 9;
+    reasons.push("Top-wallet concentration is worth tracking closely.");
   }
 
   if (contractOwnedSupplyPercent !== null && contractOwnedSupplyPercent > 20) {
