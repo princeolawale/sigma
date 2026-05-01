@@ -686,18 +686,15 @@ export default function ResultCard({ result }: ResultCardProps) {
     <section className="mt-6 space-y-4 sm:space-y-5">
       <div className="rounded-[1.5rem] border border-primary/15 bg-panel/85 p-4 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-5">
         <div className="flex flex-col gap-4 border-b border-primary/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
+          <div className="min-w-0 text-center sm:text-center">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/50">
               Sigma Analysis
-            </p>
-            <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-teal">
-              Market data: Dexscreener
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
               {result.token.symbol}
             </h2>
-            <div className="mt-2 flex max-w-full items-center justify-center gap-2 sm:justify-start">
-              <p className="result-wrap min-w-0 text-center text-sm text-white/60 sm:text-left">
+            <div className="mt-2 flex max-w-full items-center justify-center gap-2">
+              <p className="result-wrap min-w-0 text-center text-sm text-white/60">
                 {formatAddress(result.token.address)}
               </p>
               <CopyButton
@@ -785,8 +782,8 @@ export default function ResultCard({ result }: ResultCardProps) {
             <p className="text-xs uppercase tracking-[0.14em] text-white/50">
               Pair
             </p>
-            <div className="mt-2 flex max-w-full items-center justify-center gap-2 sm:justify-start">
-              <p className="result-wrap min-w-0 text-center text-base font-semibold text-white sm:text-left sm:text-lg">
+            <div className="mt-2 flex max-w-full items-center justify-center gap-2">
+              <p className="result-wrap min-w-0 text-center text-base font-semibold text-white sm:text-lg">
                 {formatAddress(result.liquidityBreakdown.pairAddress)}
               </p>
               <CopyButton
