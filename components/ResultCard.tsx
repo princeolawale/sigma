@@ -726,11 +726,8 @@ export default function ResultCard({ result }: ResultCardProps) {
           <div
             className={`rounded-2xl border bg-white/[0.04] p-4 sm:min-w-52 ${riskTone.border} ${riskTone.glow}`}
           >
-            <p className="text-sm text-white/60">Final Verdict</p>
-            <p className={`mt-2 text-xl font-semibold ${riskTone.color}`}>
-              {result.riskVerdict}
-            </p>
-            <p className={`mt-2 text-sm font-medium ${riskTone.color}`}>
+            <p className="text-sm text-white/60">Sigma Score</p>
+            <p className={`mt-2 text-2xl font-semibold ${riskTone.color}`}>
               {result.riskScore}/100
             </p>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">

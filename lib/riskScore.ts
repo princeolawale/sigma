@@ -27,7 +27,6 @@ export interface ScoreBreakdown {
 
 export interface RiskScoreResult {
   score: number;
-  riskLevel: "Low Risk" | "Moderate" | "Risky" | "High Risk";
   breakdown: ScoreBreakdown;
   penalties: string[];
   reasons: string[];
@@ -37,22 +36,6 @@ const STABLECOINS = new Set(["USDT", "USDC", "DAI"]);
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function getRiskLevel(score: number): RiskScoreResult["riskLevel"] {
-  if (score >= 85) {
-    return "Low Risk";
-  }
-
-  if (score >= 70) {
-    return "Moderate";
-  }
-
-  if (score >= 50) {
-    return "Risky";
-  }
-
-  return "High Risk";
 }
 
 export function calculateRiskScore({
@@ -230,16 +213,13 @@ export function calculateRiskScore({
   }
 
   const finalScore = clamp(Math.round(score), 0, 100);
-  const riskLevel = STABLECOINS.has(upperSymbol)
-    ? "Low Risk"
-    : getRiskLevel(finalScore);
 
   if (reasons.length === 0) {
-    if (riskLevel === "Low Risk") {
+    if (finalScore >= 85) {
       reasons.push("Liquidity, maturity, and market structure all look comparatively strong.");
-    } else if (riskLevel === "Moderate") {
+    } else if (finalScore >= 70) {
       reasons.push("The setup looks tradable, but a few metrics still need monitoring.");
-    } else if (riskLevel === "Risky") {
+    } else if (finalScore >= 50) {
       reasons.push("Several market structure signals still need caution.");
     } else {
       reasons.push("The current mix of liquidity, concentration, and activity is high risk.");
@@ -248,7 +228,6 @@ export function calculateRiskScore({
 
   return {
     score: finalScore,
-    riskLevel,
     breakdown,
     penalties,
     reasons

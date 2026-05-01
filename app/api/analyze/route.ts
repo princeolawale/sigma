@@ -91,7 +91,6 @@ function buildAnalystReport(input: {
   volume24h: number;
   priceChange24h: number;
   dexName: string;
-  riskLevel: string;
   riskReasons: string[];
   penalties: string[];
   summary: string;
@@ -116,8 +115,8 @@ function buildAnalystReport(input: {
   const preferredReason = input.riskReasons[0];
 
   const finalVerdict = input.riskReasons.length
-    ? `${input.riskLevel}: ${preferredReason}`
-    : `${input.riskLevel}: The deterministic score does not show a single dominant red flag, but further wallet-level verification is still recommended.`;
+    ? `${preferredReason} Score reflects liquidity, holder concentration, activity, and market structure.`
+    : "Score reflects liquidity, holder concentration, activity, and market structure.";
 
   return {
     whatHappened,
@@ -223,7 +222,7 @@ export async function POST(request: NextRequest) {
       top10HolderPercent: holderDistribution?.top10Percent ?? null
     });
 
-    const fallbackSummary = `${risk.riskLevel} at ${risk.score}/100. ${risk.reasons[0] ?? "The current market structure is mixed and should be monitored."}`;
+    const fallbackSummary = `Sigma Score is ${risk.score}/100. ${risk.reasons[0] ?? "The current market structure is mixed and should be monitored."}`;
 
     let summary = fallbackSummary;
     try {
@@ -235,7 +234,6 @@ export async function POST(request: NextRequest) {
           volume24h,
           priceChange24h,
           riskScore: risk.score,
-          riskLevel: risk.riskLevel,
           breakdown: risk.breakdown,
           penalties: risk.penalties
         });
@@ -251,7 +249,6 @@ export async function POST(request: NextRequest) {
       volume24h,
       priceChange24h,
       dexName,
-      riskLevel: risk.riskLevel,
       riskReasons: risk.reasons,
       penalties: risk.penalties,
       summary
@@ -314,7 +311,7 @@ export async function POST(request: NextRequest) {
         holderDistribution,
         analystReport: report,
         riskScore: risk.score,
-        riskVerdict: risk.riskLevel,
+        riskVerdict: "",
         scoreBreakdown: risk.breakdown,
         scorePenalties: risk.penalties,
         summary,

@@ -7,7 +7,6 @@ export interface RiskSummaryInput {
   volume24h: number;
   priceChange24h: number;
   riskScore: number;
-  riskLevel: string;
   breakdown: {
     liquidity: number;
     marketCap: number;
@@ -44,7 +43,6 @@ export async function generateRiskSummary({
   volume24h,
   priceChange24h,
   riskScore,
-  riskLevel,
   breakdown,
   penalties
 }: RiskSummaryInput) {
@@ -57,7 +55,7 @@ export async function generateRiskSummary({
       {
         role: "system",
         content:
-          "You explain a deterministic crypto token risk score. Do not invent or change the score. Do not override the risk level. Keep the summary to 2 short sentences, trader-friendly, and non-hype."
+          "You explain a deterministic crypto token score. Do not invent or change the score. Do not assign text risk labels. Keep the summary to 2 short sentences, trader-friendly, and non-hype."
       },
       {
         role: "user",
@@ -67,8 +65,7 @@ export async function generateRiskSummary({
           `Market cap USD: ${marketCapUsd ?? "unavailable"}`,
           `24h volume USD: ${volume24h}`,
           `24h price change percent: ${priceChange24h}`,
-          `Risk score out of 100: ${riskScore}`
-          ,`Risk level: ${riskLevel}`,
+          `Sigma score out of 100: ${riskScore}`,
           `Breakdown: ${JSON.stringify(breakdown)}`,
           `Penalties: ${penalties.join(", ") || "none"}`
         ].join("\n")
